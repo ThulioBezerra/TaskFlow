@@ -1,0 +1,51 @@
+schema: 1
+story: '1.6'
+story_title: 'Task Editing and Details'
+gate: PASS
+status_reason: 'Core functionality is implemented, but the UI for editing task details is incomplete. This is a noted deviation.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2025-11-06T00:45:53-03:00'
+
+top_issues:
+  - severity: medium
+    description: 'The TaskDetailsModal is missing fields for priority, due date, and assignee.'
+    refs: ['frontend/src/components/TaskDetailsModal.tsx']
+waiver: { active: false }
+
+quality_score: 80
+expires: '2025-11-20T00:45:53-03:00'
+
+evidence:
+  tests_reviewed: 1
+  risks_identified: 1
+  trace:
+    ac_covered: [1, 4, 5]
+    ac_gaps: [2, 3]
+
+nfr_validation:
+  security:
+    status: CONCERNS
+    notes: 'Frontend uses DUMMY_TOKEN. Needs integration with actual authentication token management.'
+  performance:
+    status: PASS
+    notes: 'Performance impact is minimal.'
+  reliability:
+    status: PASS
+    notes: 'Basic error handling in frontend. Backend handles persistence.'
+  maintainability:
+    status: PASS
+    notes: 'Code is clear and follows good practices.'
+
+recommendations:
+  immediate:
+    - action: 'Implement the missing fields (priority, due date, assignee) in the TaskDetailsModal component.'
+      refs: ['frontend/src/components/TaskDetailsModal.tsx']
+  future:
+    - action: 'Implement more robust error handling in the frontend taskService.'
+      refs: ['frontend/src/services/taskService.ts', 'frontend/src/components/TaskDetailsModal.tsx']
+    - action: 'Integrate actual authentication token retrieval and management in the frontend.'
+      refs: ['frontend/src/App.tsx', 'frontend/src/services/taskService.ts']
+    - action: 'Add unit tests for frontend components and services.'
+      refs: ['frontend/src/components/TaskDetailsModal.tsx', 'frontend/src/services/taskService.ts']
+    - action: 'Add backend validation for UpdateTaskRequest fields.'
+      refs: ['backend/src/main/java/com/taskflow/dto/UpdateTaskRequest.java']

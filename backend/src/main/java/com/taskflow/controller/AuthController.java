@@ -1,5 +1,7 @@
 package com.taskflow.controller;
 
+import com.taskflow.dto.AuthResponse;
+import com.taskflow.dto.LoginRequest;
 import com.taskflow.dto.RegisterRequest;
 import com.taskflow.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,11 @@ public class AuthController {
     public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
         authService.register(request);
         return ResponseEntity.ok("User registered successfully");
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 
     @ExceptionHandler(IllegalStateException.class)

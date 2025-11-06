@@ -1,6 +1,7 @@
 package com.taskflow.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskflow.dto.LoginRequest;
 import com.taskflow.dto.RegisterRequest;
 import com.taskflow.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,5 +61,33 @@ class AuthControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(containsString("Email already registered")));
+    }
+
+    @Test
+    void login_Success() throws Exception {
+        // Register a user first
+        RegisterRequest registerRequest = new RegisterRequest("test@example.com", "password");
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isOk());
+
+        // Attempt to login
+        LoginRequest loginRequest = new LoginRequest("test@example.com", "password");
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("token")));
+    }
+
+    @Test
+    void login_InvalidCredentials_ReturnsUnauthorized() throws Exception {
+        // Attempt to login with invalid credentials
+        LoginRequest loginRequest = new LoginRequest("wrong@example.com", "wrongpassword");
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isUnauthorized());
     }
 }
