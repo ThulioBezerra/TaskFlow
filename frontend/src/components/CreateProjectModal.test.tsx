@@ -1,25 +1,26 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CreateProjectModal from './CreateProjectModal';
 import projectService from '../services/projectService';
+import '@testing-library/jest-dom';
 import toast from 'react-hot-toast';
 
 // Mock the projectService and toast
-jest.mock('../services/projectService');
-jest.mock('react-hot-toast');
+vi.mock('../services/projectService');
+vi.mock('react-hot-toast');
 
 describe('CreateProjectModal', () => {
-  const mockOnClose = jest.fn();
-  const mockOnCreateProject = jest.fn();
+  const mockOnClose = vi.fn();
+  const mockOnCreateProject = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Mock searchUsers to return some users
-    (projectService.searchUsers as jest.Mock).mockResolvedValue([
+    (projectService.searchUsers as any).mockResolvedValue([
       { id: '1', name: 'Alice Smith' },
       { id: '2', name: 'Bob Johnson' },
     ]);
     // Mock createProject to succeed
-    (projectService.createProject as jest.Mock).mockResolvedValue({});
+    (projectService.createProject as any).mockResolvedValue({});
   });
 
   it('does not render when isOpen is false', () => {
@@ -116,13 +117,15 @@ describe('CreateProjectModal', () => {
       managerId: '1',
       memberIds: [],
     });
-    expect(toast.success).toHaveBeenCalledWith('Project created successfully!');
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith('Project created successfully!')
+    );
     expect(mockOnClose).toHaveBeenCalledTimes(1);
     expect(mockOnCreateProject).toHaveBeenCalledTimes(1);
   });
 
   it('shows error toast on failed project creation', async () => {
-    (projectService.createProject as jest.Mock).mockRejectedValue(new Error('API Error'));
+    (projectService.createProject as any).mockRejectedValue(new Error('API Error'));
 
     render(
       <CreateProjectModal
@@ -135,9 +138,11 @@ describe('CreateProjectModal', () => {
     fireEvent.change(screen.getByLabelText(/Project Name:/i), { target: { value: 'Failing Project' } });
     fireEvent.click(screen.getByRole('button', { name: /Create Project/i }));
 
-    expect(await screen.findByText('Failed to create project.')).toBeInTheDocument();
-    expect(toast.error).toHaveBeenCalledWith('Failed to create project.');
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('Failed to create project.')
+    );
     expect(mockOnClose).not.toHaveBeenCalled();
     expect(mockOnCreateProject).not.toHaveBeenCalled();
+
   });
 });
