@@ -1,5 +1,6 @@
 package com.taskflow.config;
 
+import com.taskflow.config.CustomUserDetails;
 import com.taskflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +23,7 @@ public class ApplicationConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByEmail(username)
+                .map(CustomUserDetails::new) // Wrap User with CustomUserDetails
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 

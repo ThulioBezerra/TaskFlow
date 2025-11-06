@@ -1,7 +1,7 @@
 package com.taskflow.service;
 
 import com.taskflow.dto.RegisterRequest;
-import com.taskflow.model.Role;
+import com.taskflow.model.UserRole;
 import com.taskflow.model.User;
 import com.taskflow.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +36,7 @@ class AuthServiceTest {
         user = User.builder()
                 .email("test@example.com")
                 .password("encodedPassword")
-                .role(Role.COLLABORATOR)
+                .role(UserRole.COLLABORATOR)
                 .build();
     }
 

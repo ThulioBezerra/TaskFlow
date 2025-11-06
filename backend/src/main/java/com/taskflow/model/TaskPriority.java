@@ -1,6 +1,6 @@
 package com.taskflow.model;
 
-public enum Priority {
+public enum TaskPriority {
     LOW,
     MEDIUM,
     HIGH

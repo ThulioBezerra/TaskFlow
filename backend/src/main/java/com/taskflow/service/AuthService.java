@@ -1,9 +1,10 @@
 package com.taskflow.service;
 
+import com.taskflow.config.CustomUserDetails;
 import com.taskflow.dto.AuthResponse;
 import com.taskflow.dto.LoginRequest;
 import com.taskflow.dto.RegisterRequest;
-import com.taskflow.model.Role;
+import com.taskflow.model.UserRole;
 import com.taskflow.model.User;
 import com.taskflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ public class AuthService {
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.COLLABORATOR)
+                .role(UserRole.COLLABORATOR)
                 .build();
         userRepository.save(user);
     }
@@ -45,7 +46,7 @@ public class AuthService {
         var claims = new java.util.HashMap<String, Object>();
         claims.put("userId", user.getId());
         claims.put("role", user.getRole());
-        var jwtToken = jwtService.generateToken(claims, user);
+        var jwtToken = jwtService.generateToken(claims, new CustomUserDetails(user));
         return AuthResponse.builder()
                 .token(jwtToken)
                 .build();

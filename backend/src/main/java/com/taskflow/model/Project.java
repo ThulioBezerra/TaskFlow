@@ -15,37 +15,33 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "projects")
+public class Project {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @Column(unique = true, nullable = false)
-    private String email;
-
-    @Column(name = "password_hash", nullable = false)
-    private String password;
-
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserRole role;
+    private String name;
+
+    private String description;
 
     @Column(nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @JsonIgnore // Added for serialization
-    @OneToMany(mappedBy = "assignee")
-    private Set<Task> assignedTasks;
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Task> tasks;
 
     @JsonIgnore // Added for serialization
-    @ManyToMany(mappedBy = "members")
-    private Set<Project> projects;
-
-    @JsonIgnore // Added for serialization
-    @OneToMany(mappedBy = "author")
-    private Set<Comment> comments;
+    @ManyToMany
+    @JoinTable(
+        name = "project_members",
+        joinColumns = @JoinColumn(name = "project_id"),
+        inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private Set<User> members;
 
     @PrePersist
     protected void onCreate() {
