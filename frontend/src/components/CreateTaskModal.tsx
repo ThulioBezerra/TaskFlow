@@ -24,6 +24,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, token }) => 
             await createTask({ title, description }, token);
             onClose();
         } catch (err) {
+            console.error('Error creating task:', err);
             setError('Failed to create task. Please try again.');
         }
     };

@@ -1,4 +1,5 @@
 import type { Task } from "../components/TaskCard";
+import type { Comment } from "../types";
 
 const API_URL = '/api/tasks';
 
@@ -31,7 +32,7 @@ export const createTask = async (task: { title: string; description: string }, t
     return response.json();
 };
 
-export const updateTask = async (id: number, task: Partial<Task>, token: string) => {
+export const updateTask = async (id: string, task: Partial<Task>, token: string) => {
     const response = await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
         headers: {
@@ -48,7 +49,7 @@ export const updateTask = async (id: number, task: Partial<Task>, token: string)
     return response.json();
 };
 
-export const updateTaskStatus = async (id: number, status: string, token: string) => {
+export const updateTaskStatus = async (id: string, status: string, token: string) => {
     const response = await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
         headers: {
@@ -60,6 +61,35 @@ export const updateTaskStatus = async (id: number, status: string, token: string
 
     if (!response.ok) {
         throw new Error('Failed to update task status');
+    }
+
+    return response.json();
+};
+
+export const fetchCommentsForTask = async (taskId: string, token: string): Promise<Comment[]> => {
+    const response = await fetch(`${API_URL}/${taskId}/comments`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    if (!response.ok) {
+        throw new Error('Failed to fetch comments');
+    }
+    return response.json();
+};
+
+export const addCommentToTask = async (taskId: string, content: string, token: string): Promise<Comment> => {
+    const response = await fetch(`${API_URL}/${taskId}/comments`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ content })
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to add comment');
     }
 
     return response.json();

@@ -3,13 +3,13 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 export type Task = {
-    id: number;
+    id: string;
     title: string;
     description: string;
     status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
     priority: 'LOW' | 'MEDIUM' | 'HIGH' | null;
     dueDate: string | null;
-    assignee: { id: number; email: string } | null;
+    assignee: { id: string; email: string } | null;
 }
 
 interface TaskCardProps {

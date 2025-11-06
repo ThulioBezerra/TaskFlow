@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateTask } from '../services/taskService';
 import type { Task } from './TaskCard';
+import CommentsSection from './CommentsSection';
+import { fetchCommentsForTask } from '../services/taskService';
+
+interface Comment {
+    id: string;
+    author: {
+        id: string;
+        username: string;
+    };
+    content: string;
+    timestamp: string; // ISO 8601 string
+}
 
 interface TaskDetailsModalProps {
     task: Task;
@@ -13,7 +25,19 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
     const queryClient = useQueryClient();
     const [title, setTitle] = useState(task.title);
     const [description, setDescription] = useState(task.description);
-    // Add other fields here in a real app (priority, dueDate, assigneeId)
+    const [comments, setComments] = useState<Comment[]>([]);
+
+    useEffect(() => {
+        const loadComments = async () => {
+            try {
+                const fetchedComments = await fetchCommentsForTask(task.id, token);
+                setComments(fetchedComments);
+            } catch (error) {
+                console.error('Failed to fetch comments:', error);
+            }
+        };
+        loadComments();
+    }, [task.id, token]);
 
     const mutation = useMutation({
         mutationFn: (updatedTask: Partial<Task>) => updateTask(task.id, updatedTask, token),
@@ -54,6 +78,12 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
                     <button type="submit">Save</button>
                     <button type="button" onClick={onClose}>Cancel</button>
                 </form>
+                <CommentsSection
+                    taskId={task.id}
+                    comments={comments}
+                    token={token}
+                    onCommentAdded={(newComment) => setComments((prevComments) => [...prevComments, newComment])}
+                />
             </div>
         </div>
     );

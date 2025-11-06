@@ -17,7 +17,7 @@ const KanbanBoard: React.FC = () => {
     });
 
     const mutation = useMutation({
-        mutationFn: ({ id, status }: { id: number, status: string }) => updateTaskStatus(id, status, "DUMMY_TOKEN"),
+        mutationFn: ({ id, status }: { id: string, status: string }) => updateTaskStatus(id, status, "DUMMY_TOKEN"),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
         },
