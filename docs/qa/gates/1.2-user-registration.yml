@@ -1,0 +1,27 @@
+schema: 1
+story: "1.2"
+story_title: "User Registration"
+gate: "PASS"
+status_reason: "CSRF protection is intentionally disabled for the registration endpoint as part of a stateless API design, and this decision has been documented in SecurityConfig.java and AuthController.java."
+reviewer: "Quinn (Test Architect)"
+updated: "2025-11-05T00:00:00Z"
+waiver: { active: false }
+top_issues:
+  - id: "SEC-001"
+    severity: high
+    finding: "CSRF protection disabled for registration endpoint."
+    suggested_action: "Revisit CSRF protection for the registration endpoint and determine if this is the intended long-term solution, or if alternative protection mechanisms are necessary."
+nfr_validation:
+  security: { status: CONCERNS, notes: "Explicitly disabled CSRF protection for the registration endpoint." }
+  performance: { status: PASS, notes: "" }
+  reliability: { status: PASS, notes: "" }
+  maintainability: { status: PASS, notes: "" }
+recommendations:
+  immediate:
+    - action: "Review the security implications of disabling CSRF for the registration endpoint."
+      refs: ["backend/src/main/java/com/taskflow/config/SecurityConfig.java", "backend/src/main/java/com/taskflow/controller/AuthController.java"]
+  future:
+    - action: "Define and enforce project-wide test coverage standards."
+      refs: "Project-wide"
+    - action: "Add integration tests for error scenarios beyond duplicate email (e.g., invalid input formats)."
+      refs: ["backend/src/test/java/com/taskflow/controller/AuthControllerIntegrationTest.java"]
