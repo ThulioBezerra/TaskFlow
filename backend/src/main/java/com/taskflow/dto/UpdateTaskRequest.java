@@ -1,6 +1,7 @@
 package com.taskflow.dto;
 
 import com.taskflow.model.TaskPriority;
+import com.taskflow.model.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,4 +20,5 @@ public class UpdateTaskRequest {
     private TaskPriority priority;
     private LocalDate dueDate;
     private UUID assigneeId;
+    private TaskStatus status;
 }

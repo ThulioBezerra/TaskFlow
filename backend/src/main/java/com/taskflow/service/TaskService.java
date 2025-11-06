@@ -5,11 +5,11 @@ import com.taskflow.exception.ResourceNotFoundException;
 import com.taskflow.model.Project;
 import com.taskflow.model.Task;
 import com.taskflow.model.User;
+import com.taskflow.model.TaskStatus;
 import com.taskflow.repository.ProjectRepository;
 import com.taskflow.repository.TaskRepository;
 import com.taskflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +25,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository; // Inject ProjectRepository
+    private final GamificationService gamificationService;
 
     public List<TaskDto> getTasks() {
         return taskRepository.findAll().stream()
@@ -68,6 +69,12 @@ public class TaskService {
             User assignee = userRepository.findById(request.getAssigneeId())
                     .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
             task.setAssignee(assignee);
+        }
+        if (request.getStatus() != null) {
+            task.setStatus(request.getStatus());
+            if (request.getStatus() == TaskStatus.COMPLETED) {
+                gamificationService.checkAndAwardBadges(task.getAssignee());
+            }
         }
 
         Task updatedTask = taskRepository.save(task);

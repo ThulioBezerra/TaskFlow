@@ -47,6 +47,15 @@ public class User {
     @OneToMany(mappedBy = "author")
     private Set<Comment> comments;
 
+    @JsonIgnore
+    @ManyToMany
+    @JoinTable(
+        name = "user_badges",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "badge_id")
+    )
+    private Set<Badge> badges;
+
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();
