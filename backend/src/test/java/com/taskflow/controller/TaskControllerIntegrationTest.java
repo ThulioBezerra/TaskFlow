@@ -1,17 +1,8 @@
 package com.taskflow.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.taskflow.config.CustomUserDetails;
-import com.taskflow.dto.CreateTaskRequest;
-import com.taskflow.dto.TaskDto;
-import com.taskflow.dto.UpdateTaskRequest;
-import com.taskflow.model.TaskPriority;
-import com.taskflow.model.User;
-import com.taskflow.model.UserRole;
-import com.taskflow.repository.TaskRepository;
-import com.taskflow.repository.UserRepository;
-import com.taskflow.service.AuthService;
-import com.taskflow.service.TaskService;
+import java.time.LocalDate;
+
+import static org.hamcrest.Matchers.hasSize;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,15 +13,25 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.time.LocalDate;
-
-import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskflow.config.CustomUserDetails;
+import com.taskflow.dto.CreateTaskRequest;
+import com.taskflow.dto.TaskDto;
+import com.taskflow.dto.UpdateTaskRequest;
+import com.taskflow.model.TaskPriority;
+import com.taskflow.model.TaskStatus;
+import com.taskflow.model.User;
+import com.taskflow.model.UserRole;
+import com.taskflow.repository.TaskRepository;
+import com.taskflow.repository.UserRepository;
+import com.taskflow.service.AuthService;
+import com.taskflow.service.TaskService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -116,7 +117,7 @@ class TaskControllerIntegrationTest {
         void updateTask_Success() throws Exception {
                 UpdateTaskRequest request = new UpdateTaskRequest("Updated Title", "Updated Description",
                                 TaskPriority.HIGH,
-                                LocalDate.now(), assignee.getId());
+                                LocalDate.now(), assignee.getId(), TaskStatus.IN_PROGRESS);
 
                 mockMvc.perform(put("/api/tasks/" + task.id())
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -125,7 +126,7 @@ class TaskControllerIntegrationTest {
                                 .andExpect(jsonPath("$.title").value("Updated Title"))
                                 .andExpect(jsonPath("$.description").value("Updated Description"))
                                 .andExpect(jsonPath("$.priority").value("HIGH"))
-                                .andExpect(jsonPath("$.assignee.id").value(assignee.getId().toString()));
+                                .andExpect(jsonPath("$.assignee.id").value(assignee.getId().toString()))
+                                .andExpect(jsonPath("$.status").value(String.valueOf(TaskStatus.IN_PROGRESS)));
         }
 }
-
