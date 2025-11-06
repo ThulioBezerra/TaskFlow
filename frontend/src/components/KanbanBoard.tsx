@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext } from '@d-kit/sortable';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import KanbanColumn from './KanbanColumn';
 import { getTasks, updateTaskStatus } from '../services/taskService';
-import { Task } from './TaskCard';
+import type { Task } from './TaskCard';
 import TaskDetailsModal from './TaskDetailsModal';
 
 const KanbanBoard: React.FC = () => {

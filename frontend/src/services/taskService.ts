@@ -1,3 +1,5 @@
+import type { Task } from "../components/TaskCard";
+
 const API_URL = '/api/tasks';
 
 export const getTasks = async (token: string) => {

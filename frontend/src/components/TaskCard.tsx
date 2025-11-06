@@ -2,7 +2,7 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-export interface Task {
+export type Task = {
     id: number;
     title: string;
     description: string;

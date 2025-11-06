@@ -1,7 +1,8 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import TaskCard, { Task } from './TaskCard';
+import TaskCard from './TaskCard';
+import type { Task } from './TaskCard';
 
 interface KanbanColumnProps {
     id: string;

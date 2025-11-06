@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateTask } from '../services/taskService';
-import { Task } from './TaskCard';
+import type { Task } from './TaskCard';
 
 interface TaskDetailsModalProps {
     task: Task;
