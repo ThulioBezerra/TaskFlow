@@ -1,5 +1,5 @@
 import type { Task } from "../components/TaskCard";
-import type { Comment } from "../types";
+import type { Comment, Attachment } from "../types";
 
 const API_URL = '/api/tasks';
 
@@ -90,6 +90,39 @@ export const addCommentToTask = async (taskId: string, content: string, token: s
 
     if (!response.ok) {
         throw new Error('Failed to add comment');
+    }
+
+    return response.json();
+};
+
+export const uploadAttachmentToTask = async (taskId: string, file: File, token: string): Promise<Attachment> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_URL}/${taskId}/attachments`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to upload attachment');
+    }
+
+    return response.json();
+};
+
+export const fetchAttachmentsForTask = async (taskId: string, token: string): Promise<Attachment[]> => {
+    const response = await fetch(`${API_URL}/${taskId}/attachments`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch attachments');
     }
 
     return response.json();

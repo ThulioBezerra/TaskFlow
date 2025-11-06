@@ -97,4 +97,9 @@ public class TaskService {
                 projectSummary
         );
     }
+
+    public Task getTaskById(UUID taskId) {
+        return taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+    }
 }

@@ -56,6 +56,9 @@ public class Task {
     @Column(nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Attachment> attachments;
+
     public void setAuthor(User author) {
         this.author = author;
     }

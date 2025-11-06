@@ -1,22 +1,7 @@
 package com.taskflow.controller;
 
-import java.time.OffsetDateTime;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.taskflow.config.WithMockCustomUser;
+import com.taskflow.config.CustomUserDetails;
 import com.taskflow.dto.CreateCommentRequest;
 import com.taskflow.model.Comment;
 import com.taskflow.model.Task;
@@ -25,6 +10,23 @@ import com.taskflow.model.User;
 import com.taskflow.repository.CommentRepository;
 import com.taskflow.repository.TaskRepository;
 import com.taskflow.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.OffsetDateTime;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -55,7 +57,6 @@ class CommentControllerIntegrationTest {
         taskRepository.deleteAll();
         commentRepository.deleteAll();
 
-        // todo: discover how set this user -> problem in security
         testUser = new User();
         testUser.setEmail("testuser@example.com");
         testUser.setPassword("password");
@@ -68,10 +69,15 @@ class CommentControllerIntegrationTest {
         testTask.setCreatedAt(OffsetDateTime.now());
         testTask.setPriority(TaskPriority.MEDIUM);
         taskRepository.save(testTask);
+
+        // Manually set up security context
+        CustomUserDetails customUserDetails = new CustomUserDetails(testUser);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                customUserDetails, null, customUserDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     @Test
-    @WithMockCustomUser(username = "testuser@example.com")
     void createComment_shouldCreateAndReturnComment() throws Exception {
         CreateCommentRequest request = new CreateCommentRequest("This is a test comment");
 
@@ -84,7 +90,6 @@ class CommentControllerIntegrationTest {
     }
 
     @Test
-    @WithMockCustomUser(username = "testuser@example.com")
     void getCommentsByTaskId_shouldReturnComments() throws Exception {
         Comment comment = new Comment();
         comment.setContent("Existing comment");

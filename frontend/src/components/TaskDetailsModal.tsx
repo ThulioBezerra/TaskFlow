@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateTask } from '../services/taskService';
 import type { Task } from './TaskCard';
 import CommentsSection from './CommentsSection';
+import AttachmentsSection from './AttachmentsSection';
 import { fetchCommentsForTask } from '../services/taskService';
 
 interface Comment {
@@ -84,6 +85,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
                     token={token}
                     onCommentAdded={(newComment) => setComments((prevComments) => [...prevComments, newComment])}
                 />
+                <AttachmentsSection taskId={task.id} token={token} />
             </div>
         </div>
     );
