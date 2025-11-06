@@ -1,0 +1,9 @@
+schema: 1
+story: '1.1'
+story_title: 'Project Scaffolding'
+gate: PASS
+status_reason: 'All acceptance criteria met. Backend Hello World controller implemented and verified. Frontend startup instructions provided.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2025-11-05T23:20:50Z'
+top_issues: []
+waiver: { active: false }
