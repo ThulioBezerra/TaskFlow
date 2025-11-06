@@ -40,8 +40,8 @@ public class User {
     private Set<Task> assignedTasks;
 
     @JsonIgnore // Added for serialization
-    @ManyToMany(mappedBy = "members")
-    private Set<Project> projects;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ProjectMembership> memberships;
 
     @JsonIgnore // Added for serialization
     @OneToMany(mappedBy = "author")

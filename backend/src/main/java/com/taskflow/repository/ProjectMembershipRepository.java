@@ -1,11 +1,11 @@
 package com.taskflow.repository;
 
-import com.taskflow.model.Project;
+import com.taskflow.model.ProjectMembership;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
 @Repository
-public interface ProjectRepository extends JpaRepository<Project, UUID> {
+public interface ProjectMembershipRepository extends JpaRepository<ProjectMembership, UUID> {
 }

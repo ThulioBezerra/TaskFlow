@@ -5,16 +5,7 @@ import type { Task } from './TaskCard';
 import CommentsSection from './CommentsSection';
 import AttachmentsSection from './AttachmentsSection';
 import { fetchCommentsForTask } from '../services/taskService';
-
-interface Comment {
-    id: string;
-    author: {
-        id: string;
-        username: string;
-    };
-    content: string;
-    timestamp: string; // ISO 8601 string
-}
+import type { Comment } from '../types';
 
 interface TaskDetailsModalProps {
     task: Task;

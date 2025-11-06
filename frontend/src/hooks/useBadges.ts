@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getMyBadges } from '../services/api';
-import { Badge } from '../types';
+import type { Badge } from '../types';
 import toast from 'react-hot-toast';
 
 export const useBadges = () => {
