@@ -38,4 +38,10 @@ public class TaskController {
     public ResponseEntity<TaskDto> updateTask(@PathVariable UUID id, @RequestBody UpdateTaskRequest request) {
         return ResponseEntity.ok(taskService.updateTask(id, request));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTask(@PathVariable UUID id) {
+        taskService.deleteTask(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
 }

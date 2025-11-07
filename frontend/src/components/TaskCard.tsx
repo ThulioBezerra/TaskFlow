@@ -7,8 +7,9 @@ export type Task = {
     title: string;
     description: string;
     status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
-    priority: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+    priority: number | null;
     dueDate: string | null;
+    createdAt: string;
     assignee: { id: string; email: string } | null;
     projectId?: string;
     project?: { id: string; name: string };
