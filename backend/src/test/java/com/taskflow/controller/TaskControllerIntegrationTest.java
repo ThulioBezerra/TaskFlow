@@ -37,7 +37,6 @@ import com.taskflow.service.TaskService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class TaskControllerIntegrationTest {
 
         @Autowired
@@ -194,3 +193,4 @@ class TaskControllerIntegrationTest {
                                 .andExpect(jsonPath("$.name").doesNotExist());
         }
 }
+

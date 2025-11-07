@@ -25,3 +25,8 @@ export interface ProjectSummary {
     id: string;
     name: string;
 }
+
+export interface UserSummary {
+  id: string;
+  email: string;
+}

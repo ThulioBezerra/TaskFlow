@@ -1,7 +1,17 @@
-import type { Task } from "../components/TaskCard";
+import type { Task, TaskStatus } from "../components/TaskCard";
 import type { Comment, Attachment } from "../types";
 
 const API_URL = '/api/tasks';
+
+export type UpdateTaskRequest = {
+  title?: string;
+  description?: string;
+  priority?: number | null;
+  dueDate?: string | null;
+  status?: TaskStatus;
+  assigneeId?: string | null; // id do responsável (null = desassociar)
+  projectId?: string | null;  // id do projeto (null = desassociar)
+};
 
 export const getTasks = async (token: string) => {
     const response = await fetch(API_URL, {
@@ -32,31 +42,18 @@ export const createTask = async (task: { title: string; description: string; pro
     return response.json();
 };
 
-export const updateTask = async (id: string, task: Partial<Task> & { projectId?: string | null }, token: string) => {
-    const body = { ...task };
-    if (body.projectId === undefined) {
-        // If projectId is not provided in the frontend, do not send it to the backend
-        // This allows partial updates without affecting the project association
-        delete body.projectId;
-    } else if (body.projectId === null) {
-        // If projectId is explicitly null, send it as null to disassociate
-        body.projectId = null; // Ensure it's explicitly null for JSON serialization
-    }
+export const updateTask = (id: string, data: UpdateTaskRequest, token: string) => {
+  const body: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data)) if (v !== undefined) body[k] = v;
 
-    const response = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to update task');
-    }
-
-    return response.json();
+  return fetch(`/api/tasks/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  }).then(r => {
+    if (!r.ok) throw new Error('Failed to update task');
+    return r.json();
+  });
 };
 
 export const updateTaskStatus = async (id: string, status: string, token: string) => {
@@ -104,6 +101,37 @@ export const addCommentToTask = async (taskId: string, content: string, token: s
 
     return response.json();
 };
+
+export const deleteTask = async (id: string, token: string): Promise<void> => {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete task');
+  }
+};
+
+export const deleteCommentFromTask = async (taskId: string, commentId: string, token: string): Promise<void> => {
+  const res = await fetch(`${API_URL}/${taskId}/comments/${commentId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Failed to delete comment');
+};
+
+export const deleteAttachmentFromTask = async (taskId: string, attachmentId: string, token: string): Promise<void> => {
+  const res = await fetch(`${API_URL}/${taskId}/attachments/${attachmentId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Failed to delete attachment');
+};
+
+
 
 export const uploadAttachmentToTask = async (taskId: string, file: File, token: string): Promise<Attachment> => {
     const formData = new FormData();

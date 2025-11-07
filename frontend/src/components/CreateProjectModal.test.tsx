@@ -5,7 +5,10 @@ import toast from 'react-hot-toast';
 import { searchUsers, createProject } from '../services/projectService';
 
 // Mock the projectService and toast
-vi.mock('../services/projectService');
+vi.mock('../services/projectService', () => ({
+  searchUsers: vi.fn(),
+  createProject: vi.fn(),
+}));
 vi.mock('react-hot-toast');
 
 describe('CreateProjectModal', () => {

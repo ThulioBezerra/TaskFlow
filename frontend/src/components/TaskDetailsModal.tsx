@@ -1,19 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateTask, deleteTask } from '../services/taskService';
+import { updateTask, deleteTask, fetchCommentsForTask, UpdateTaskRequest } from '../services/taskService';
 import { getProjects } from '../services/projectService';
 import { getUsers } from '../services/userService';
-import type { Task } from './TaskCard';
+import type { Task, Assignee } from './TaskCard';
+import { TaskStatus } from './TaskCard';
 import CommentsSection from './CommentsSection';
 import AttachmentsSection from './AttachmentsSection';
-import { fetchCommentsForTask } from '../services/taskService';
 import type { Comment, ProjectSummary, UserSummary } from '../types';
-
-enum TaskStatus {
-    TO_DO = 'TO_DO',
-    IN_PROGRESS = 'IN_PROGRESS',
-    DONE = 'DONE',
-}
 
 interface TaskDetailsModalProps {
     task: Task;
@@ -28,7 +22,8 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
     const [priority, setPriority] = useState(task.priority || 0);
     const [dueDate, setDueDate] = useState(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
     const [status, setStatus] = useState<TaskStatus>(task.status);
-    const [selectedAssigneeId, setSelectedAssigneeId] = useState<string | undefined>(task.assignee?.id);
+    const [selectedAssigneeId, setSelectedAssigneeId] =
+        useState<string | undefined>(task.assignee?.id);
     const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(task.project?.id);
     const [projects, setProjects] = useState<ProjectSummary[]>([]);
     const [users, setUsers] = useState<UserSummary[]>([]);
@@ -53,7 +48,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
     }, [task.id, token]);
 
     const updateMutation = useMutation({
-        mutationFn: (updatedTask: Partial<Task>) => updateTask(task.id, updatedTask, token),
+        mutationFn: (payload: UpdateTaskRequest) => updateTask(task.id, payload, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
             onClose();
@@ -76,10 +71,22 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
             priority,
             dueDate: dueDate || null,
             status,
-            assigneeId: selectedAssigneeId === undefined ? undefined : selectedAssigneeId === '' ? null : selectedAssigneeId,
-            projectId: selectedProjectId === undefined ? undefined : selectedProjectId === '' ? null : selectedProjectId
+            // undefined = não altera; '' => null (desassocia)
+            assigneeId:
+            selectedAssigneeId === undefined
+                ? undefined
+                : selectedAssigneeId === ''
+                ? null
+                : selectedAssigneeId,
+            projectId:
+            selectedProjectId === undefined
+                ? undefined
+                : selectedProjectId === ''
+                ? null
+                : selectedProjectId,
         });
     };
+
 
     const handleDelete = () => {
         if (window.confirm('Are you sure you want to delete this task?')) {
@@ -159,17 +166,18 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
                     <div>
                         <label htmlFor="assignee">Assignee</label>
                         <select
-                            id="assignee"
-                            value={selectedAssigneeId || ''}
-                            onChange={(e) => setSelectedAssigneeId(e.target.value || undefined)}
+                        id="assignee"
+                        value={selectedAssigneeId ?? ''}                 // string | ''
+                        onChange={(e) => setSelectedAssigneeId(e.target.value || undefined)}
                         >
-                            <option value="">-- No Assignee --</option>
-                            {users.map((user) => (
-                                <option key={user.id} value={user.id}>
-                                    {user.email}
-                                </option>
-                            ))}
+                        <option value="">-- No Assignee --</option>
+                        {users.map((user) => (
+                            <option key={user.id} value={user.id}>
+                            {user.email}
+                            </option>
+                        ))}
                         </select>
+
                     </div>
                     <button type="submit">Save</button>
                     <button type="button" onClick={onClose}>Cancel</button>

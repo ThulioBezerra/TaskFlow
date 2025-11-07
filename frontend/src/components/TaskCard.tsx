@@ -2,15 +2,26 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+export enum TaskStatus {
+  TO_DO = 'TO_DO',
+  IN_PROGRESS = 'IN_PROGRESS',
+  DONE = 'DONE',
+}
+
+export type Assignee = {
+    id: string;
+    email: string
+}
+
 export type Task = {
     id: string;
     title: string;
     description: string;
-    status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+    status: TaskStatus;
     priority: number | null;
     dueDate: string | null;
     createdAt: string;
-    assignee: { id: string; email: string } | null;
+    assignee?: Assignee;
     projectId?: string;
     project?: { id: string; name: string };
 }

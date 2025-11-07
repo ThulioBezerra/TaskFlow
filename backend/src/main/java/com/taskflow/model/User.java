@@ -35,6 +35,9 @@ public class User {
     @Column(nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    private String passwordResetToken;
+    private OffsetDateTime passwordResetTokenExpiry;
+
     @JsonIgnore // Added for serialization
     @OneToMany(mappedBy = "assignee")
     private Set<Task> assignedTasks;
