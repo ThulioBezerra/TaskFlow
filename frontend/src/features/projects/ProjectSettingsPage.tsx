@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import * as projectService from '../../services/projectService';
 import toast from 'react-hot-toast';
+import NotificationsSettings from './NotificationsSettings';
 import './ProjectSettingsPage.css';
 
 interface Project {
@@ -10,6 +11,8 @@ interface Project {
   description: string;
   manager: { id: string; username: string; email: string };
   members: { id: string; username: string; email: string }[];
+  webhookUrl: string;
+  notificationEvents: string[];
 }
 
 const ProjectSettingsPage: React.FC = () => {
@@ -18,6 +21,8 @@ const ProjectSettingsPage: React.FC = () => {
   const [editMode, setEditMode] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [notificationEvents, setNotificationEvents] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -27,6 +32,8 @@ const ProjectSettingsPage: React.FC = () => {
           setProject(fetchedProject);
           setEditedName(fetchedProject.name);
           setEditedDescription(fetchedProject.description);
+          setWebhookUrl(fetchedProject.webhookUrl || '');
+          setNotificationEvents(fetchedProject.notificationEvents || []);
         } catch (error) {
           toast.error('Failed to fetch project details.');
           console.error('Error fetching project:', error);
@@ -43,6 +50,8 @@ const ProjectSettingsPage: React.FC = () => {
         const updatedProject = await projectService.updateProject(projectId, {
           name: editedName,
           description: editedDescription,
+          webhookUrl: webhookUrl,
+          notificationEvents: notificationEvents,
         });
         toast.success('Project updated successfully!');
         setProject(updatedProject);
@@ -83,6 +92,14 @@ const ProjectSettingsPage: React.FC = () => {
                 onChange={(e) => setEditedDescription(e.target.value)}
               ></textarea>
             </div>
+
+            <NotificationsSettings
+              webhookUrl={webhookUrl}
+              setWebhookUrl={setWebhookUrl}
+              notificationEvents={notificationEvents}
+              setNotificationEvents={setNotificationEvents}
+            />
+
             <div className="settings-actions">
               <button type="submit" className="primary-button">Save</button>
               <button type="button" onClick={() => setEditMode(false)} className="secondary-button">Cancel</button>

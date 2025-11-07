@@ -30,8 +30,9 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
-    private final ProjectRepository projectRepository; // Inject ProjectRepository
+    private final ProjectRepository projectRepository;
     private final GamificationService gamificationService;
+    private final NotificationService notificationService;
 
     public List<TaskDto> getTasks() {
         return taskRepository.findAll().stream()
@@ -59,12 +60,23 @@ public class TaskService {
         });
 
         Task savedTask = taskRepository.save(task);
+
+        // Send notification
+        if (task.getProject() != null && task.getProject().getWebhookUrl() != null &&
+            task.getProject().getNotificationEvents() != null &&
+            task.getProject().getNotificationEvents().contains("Task Created")) {
+            String message = "Task Created: " + savedTask.getTitle();
+            notificationService.sendNotification(task.getProject().getWebhookUrl(), message);
+        }
+
         return toDto(savedTask);
     }
 
     public TaskDto updateTask(UUID id, UpdateTaskRequest request) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        TaskStatus oldStatus = task.getStatus();
 
         if (request.getTitle() != null)
             task.setTitle(request.getTitle());
@@ -88,10 +100,6 @@ public class TaskService {
             }
         }
 
-        // ✅ TRI-ESTADO para projectId:
-        // null -> não tocar (campo ausente no payload)
-        // Optional.of -> associar ao projeto informado
-        // Optional.empty() -> DESASSOCIAR (set null)
         if (request.getProjectId() != null) {
             if (request.getProjectId().isPresent()) {
                 UUID projectId = request.getProjectId().get();
@@ -99,11 +107,21 @@ public class TaskService {
                         .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
                 task.setProject(project);
             } else {
-                task.setProject(null); // remover associação
+                task.setProject(null);
             }
         }
 
         Task updatedTask = taskRepository.save(task);
+
+        // Send notification if status changed
+        if (request.getStatus() != null && request.getStatus() != oldStatus &&
+            task.getProject() != null && task.getProject().getWebhookUrl() != null &&
+            task.getProject().getNotificationEvents() != null &&
+            task.getProject().getNotificationEvents().contains("Task Status Changed")) {
+            String message = "Task '" + updatedTask.getTitle() + "' status changed to: " + updatedTask.getStatus();
+            notificationService.sendNotification(task.getProject().getWebhookUrl(), message);
+        }
+
         return toDto(updatedTask);
     }
 

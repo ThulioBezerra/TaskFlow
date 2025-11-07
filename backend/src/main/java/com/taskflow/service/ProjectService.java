@@ -62,6 +62,8 @@ public class ProjectService {
                 .map(project -> {
                     project.setName(updatedProject.getName());
                     project.setDescription(updatedProject.getDescription());
+                    project.setWebhookUrl(updatedProject.getWebhookUrl());
+                    project.setNotificationEvents(updatedProject.getNotificationEvents());
                     // Members and manager updates would be more complex and handled in separate methods
                     return projectRepository.save(project);
                 })

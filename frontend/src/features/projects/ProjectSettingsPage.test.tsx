@@ -57,6 +57,8 @@ describe('ProjectSettingsPage', () => {
       ...mockProject,
       name: 'Updated Project Name',
       description: 'Updated description.',
+      webhookUrl: '', 
+      notificationEvents: []
     });
   });
 
@@ -103,8 +105,9 @@ describe('ProjectSettingsPage', () => {
 
     expect(projectService.updateProject).toHaveBeenCalledWith(
       '123',
-      { name: 'New Project Name', description: 'New Project Description' },
+      { name: 'New Project Name', description: 'New Project Description', webhookUrl: '', notificationEvents: [] },
     );
+
 
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Project updated successfully!');
@@ -119,6 +122,8 @@ describe('ProjectSettingsPage', () => {
       name: 'Initial Project Name',
       description: 'Initial project description.',
       members: ['Member One', 'Member Two'],
+      webhookUrl: '', 
+      notificationEvents: []
     });
     (projectService.updateProject as any).mockRejectedValue(new Error('Update Error'));
 

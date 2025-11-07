@@ -13,4 +13,6 @@ public class ProjectResponseDto {
     private String description;
     private OffsetDateTime createdAt;
     private Set<ProjectMemberDto> members;
+    private String webhookUrl;
+    private java.util.List<String> notificationEvents;
 }

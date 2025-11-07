@@ -7,6 +7,8 @@ export interface ProjectDetails {
   description: string;
   manager: { id: string; username: string; email: string };
   members: { id: string; username: string; email: string }[];
+  webhookUrl: string;
+  notificationEvents: string[];
 }
 
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -80,7 +82,7 @@ export async function createProject(
 
 export async function updateProject(
   id: string,
-  project: { name: string; description: string; managerId?: string; memberIds?: string[] },
+  project: { name: string; description: string; managerId?: string; memberIds?: string[]; webhookUrl?: string; notificationEvents?: string[] },
   tokenOverride?: string
 ): Promise<ProjectDetails> { // ✅ objeto completo
   return apiFetch<ProjectDetails>(

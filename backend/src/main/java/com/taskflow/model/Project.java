@@ -36,6 +36,11 @@ public class Project {
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<Task> tasks;
 
+    private String webhookUrl;
+
+    @ElementCollection
+    private List<String> notificationEvents;
+
     public Project(UUID id, String name, String description, List<User> members, User manager) {
         this.id = id;
         this.name = name;
