@@ -1,6 +1,9 @@
 package com.taskflow.controller;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -25,6 +28,8 @@ import com.taskflow.service.ProjectService;
 import com.taskflow.service.UserService;
 
 import jakarta.validation.Valid;
+
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -53,19 +58,31 @@ public class ProjectController {
             return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
         }
 
-        String email = auth.getName(); // username/email do user logado
-        User manager = userService.findByEmail(email); // implementa isso no UserService/Repo
+        String email = auth.getName();
+        User manager = userService.findByEmail(email);
 
         // 2) Monta o projeto
         Project project = new Project();
         project.setName(request.getName());
         project.setDescription(request.getDescription());
 
+        Set<UUID> members = new LinkedHashSet<>();
+        if (request.getMemberEmails() != null) {
+            for (String memberEmail : request.getMemberEmails()) {
+                User member = userService.findByEmail(memberEmail);
+                if (member != null) {
+                    members.add(member.getId());
+                }
+            }
+        }
+        members.add(manager.getId());
+
+        List<UUID> memberIds = new ArrayList<>(members);
         // 3) Usa SEMPRE o ID do usuário logado como manager
         Project createdProject = projectService.createProject(
                 project,
                 manager.getId(), // managerId = usuário autenticado
-                request.getMemberIds());
+                memberIds);
 
         return new ResponseEntity<>(convertToDto(createdProject), HttpStatus.CREATED);
     }
@@ -92,10 +109,27 @@ public class ProjectController {
 
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getAllProjects() {
-        // TODO: Implement authentication and authorization checks here
-        // Only authenticated users should be able to view projects, potentially
-        // filtered by membership
         List<Project> projects = projectService.getAllProjects();
+        List<ProjectResponse> projectDtos = projects.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+        return new ResponseEntity<>(projectDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<?> getAllProjectsForUser() {
+        // 1) Pega o usuário autenticado
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated()) {
+            // Aqui você pode retornar 401 ou 403, dependendo da sua regra
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+
+        String email = auth.getName();
+        User user = userService.findByEmail(email);
+
+        List<Project> projects = projectService.getAllProjectsForUser(user);
         List<ProjectResponse> projectDtos = projects.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());

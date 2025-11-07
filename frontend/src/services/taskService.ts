@@ -1,7 +1,7 @@
 // src/services/taskService.ts
-import { api } from './api'; // <- sua instância axios com interceptors
-import type { Task, TaskStatus } from '../components/TaskCard';
-import type { Comment, Attachment } from '../types';
+import { api } from "../lib/api"; // <- sua instância axios com interceptors
+import type { Task, TaskStatus } from "../components/TaskCard";
+import type { Comment, Attachment } from "../types";
 
 export type UpdateTaskRequest = {
   title?: string;
@@ -10,10 +10,10 @@ export type UpdateTaskRequest = {
   dueDate?: string | null;
   status?: TaskStatus;
   assigneeId?: string | null; // null = desassociar; undefined = não alterar
-  projectId?: string | null;  // null = desassociar; undefined = não alterar
+  projectId?: string | null; // null = desassociar; undefined = não alterar
 };
 
-const BASE = '/tasks';
+const BASE = "/tasks";
 
 /** Lista tarefas */
 export const getTasks = async (): Promise<Task[]> => {
@@ -22,9 +22,14 @@ export const getTasks = async (): Promise<Task[]> => {
 };
 
 /** Cria tarefa */
-export const createTask = async (
-  task: { title: string; description: string; projectId?: string }
-): Promise<Task> => {
+export const createTask = async (task: {
+  title: string;
+  description: string;
+  projectId?: string;
+  assigneeEmail?: string;
+  dueDate?: string | null;
+  priority?: string;
+}): Promise<Task> => {
   const { data } = await api.post<Task>(BASE, task);
   return data;
 };
@@ -53,7 +58,9 @@ export const updateTaskStatus = async (
 };
 
 /** Comentários */
-export const fetchCommentsForTask = async (taskId: string): Promise<Comment[]> => {
+export const fetchCommentsForTask = async (
+  taskId: string
+): Promise<Comment[]> => {
   const { data } = await api.get<Comment[]>(`${BASE}/${taskId}/comments`);
   return data;
 };
@@ -62,7 +69,9 @@ export const addCommentToTask = async (
   taskId: string,
   content: string
 ): Promise<Comment> => {
-  const { data } = await api.post<Comment>(`${BASE}/${taskId}/comments`, { content });
+  const { data } = await api.post<Comment>(`${BASE}/${taskId}/comments`, {
+    content,
+  });
   return data;
 };
 
@@ -79,10 +88,13 @@ export const uploadAttachmentToTask = async (
   file: File
 ): Promise<Attachment> => {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append("file", file);
 
   // Não setar Content-Type manualmente; o browser define o boundary
-  const { data } = await api.post<Attachment>(`${BASE}/${taskId}/attachments`, formData);
+  const { data } = await api.post<Attachment>(
+    `${BASE}/${taskId}/attachments`,
+    formData
+  );
   return data;
 };
 

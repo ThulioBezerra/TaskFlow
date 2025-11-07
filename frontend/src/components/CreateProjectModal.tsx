@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import * as projectService from '../services/projectService';
-import { getUsers, getUsersByName } from '../services/userService';
-import toast from 'react-hot-toast';
-import './CreateProjectModal.css';
-import type { AllUsers } from '../types';
-import { useQuery } from '@tanstack/react-query';
+import React, { useMemo, useState } from "react";
+import * as projectService from "../services/projectService";
+// import { getUsersByName } from "../services/userService"; // Não é mais necessário
+import toast from "react-hot-toast";
+import "./CreateProjectModal.css";
+import { useUsers } from "../hooks/useUsers";
 
 interface CreateProjectModalProps {
   isOpen: boolean;
@@ -17,93 +16,33 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   onClose,
   onCreateProject,
 }) => {
-  const { data: allUsers = [] } = useQuery<AllUsers[]>({
-    queryKey: ['users'],
-    queryFn: getUsers,
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
-
-  const [projectName, setProjectName] = useState('');
-  const [projectDescription, setProjectDescription] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Agora são só strings (emails)
-  const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [projectName, setProjectName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const { users } = useUsers(); // Sua "lista constante" de usuários
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  // guarda o timeout sem causar re-render
-  const timerRef = useRef<number | null>(null);
-
-  // filtro local por email usando cache
-  const locallyFiltered = useMemo(() => {
+  // Calcula os resultados da busca dinamicamente
+  const searchResults = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-    if (!term) return [];
-    return allUsers
-      .filter((u) => u.email?.toLowerCase().includes(term))
-      .map((u) => u.email);
-  }, [allUsers, searchTerm]);
 
-    useEffect(() => {
-    // limpa timeout anterior
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-
-    const term = searchTerm.trim();
+    // Se não há termo, não mostre resultados
     if (!term) {
-      // zera resultados se campo vazio
-      setSearchResults((prev) => (prev.length ? [] : prev));
-      return;
+      return [];
     }
 
-    timerRef.current = window.setTimeout(async () => {
-      try {
-        // 1) filtro local pelo cache (allUsers)
-        const lower = term.toLowerCase();
-        let candidates = allUsers
-          .filter((u) => u.email?.toLowerCase().includes(lower))
-          .map((u) => u.email);
-
-        // 2) fallback no servidor se nada no cache
-        if (candidates.length === 0) {
-          const serverUsers = await getUsersByName(term);
-          candidates = serverUsers.map((u: { email: string }) => u.email);
-        }
-
-        // 3) remove já selecionados
-        candidates = candidates.filter((email) => !selectedUsers.includes(email));
-
-        // 4) evita setState redundante (prev == candidates)
-        setSearchResults((prev) => {
-          if (prev.length === candidates.length &&
-              prev.every((v, i) => v === candidates[i])) {
-            return prev;
-          }
-          return candidates;
-        });
-      } catch (err) {
-        console.error('Error searching users:', err);
-        toast.error('Failed to search users.');
-      }
-    }, 300);
-
-    // cleanup
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [searchTerm, allUsers, selectedUsers]);
+    // Filtra a lista 'users' local, remove os já selecionados
+    return users
+      .filter((u) => u.email?.toLowerCase().includes(term))
+      .map((u) => u.email)
+      .filter((email) => !selectedUsers.includes(email ?? "")); // Garante que email não é null/undefined na comparação
+  }, [users, searchTerm, selectedUsers]); // Recalcula se qualquer um mudar
 
   const handleAddUser = (email: string) => {
     if (!selectedUsers.includes(email)) {
       setSelectedUsers((prev) => [...prev, email]);
     }
-    setSearchTerm('');
-    setSearchResults([]);
+    setSearchTerm(""); // Limpar o termo já faz o useMemo retornar []
   };
 
   const handleRemoveUser = (email: string) => {
@@ -115,24 +54,22 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     if (!projectName.trim()) return;
 
     try {
-      // IMPORTANTE: envie memberEmails (não memberIds)
       await projectService.createProject({
         name: projectName.trim(),
         description: projectDescription.trim(),
-        memberEmails: selectedUsers, // <<< aqui vai a lista de emails
+        memberEmails: selectedUsers,
       });
 
-      toast.success('Project created successfully!');
-      setProjectName('');
-      setProjectDescription('');
+      toast.success("Project created successfully!");
+      setProjectName("");
+      setProjectDescription("");
       setSelectedUsers([]);
-      setSearchTerm('');
-      setSearchResults([]);
+      setSearchTerm(""); // Limpar o termo já esvazia os resultados
       onClose();
       onCreateProject();
     } catch (error) {
-      console.error('Error creating project:', error);
-      toast.error('Failed to create project.');
+      console.error("Error creating project:", error);
+      toast.error("Failed to create project.");
     }
   };
 
@@ -146,6 +83,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="projectName">Project Name:</label>
+
             <input
               type="text"
               id="projectName"
@@ -157,6 +95,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
           <div className="form-group">
             <label htmlFor="projectDescription">Description (Optional):</label>
+
             <textarea
               id="projectDescription"
               value={projectDescription}
@@ -175,6 +114,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               autoComplete="off"
             />
 
+            {/* O JSX de renderização funciona exatamente como antes */}
             {searchResults.length > 0 && (
               <ul className="search-results">
                 {searchResults.map((email) => (
@@ -189,15 +129,25 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               {selectedUsers.map((email) => (
                 <span key={email} className="selected-user-tag">
                   {email}
-                  <button type="button" onClick={() => handleRemoveUser(email)}>x</button>
+                  <button type="button" onClick={() => handleRemoveUser(email)}>
+                    x
+                  </button>
                 </span>
               ))}
             </div>
           </div>
 
           <div className="modal-actions">
-            <button type="submit" className="primary-button">Create Project</button>
-            <button type="button" onClick={onClose} className="secondary-button">Cancel</button>
+            <button type="submit" className="primary-button">
+              Create Project
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="secondary-button"
+            >
+              Cancel
+            </button>
           </div>
         </form>
       </div>

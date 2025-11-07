@@ -54,6 +54,10 @@ public class ProjectService {
         return projectRepository.findAll();
     }
 
+    public List<Project> getAllProjectsForUser(User user) {
+        return projectRepository.findByMembers_Id(user.getId());
+    }
+
     public Project updateProject(UUID id, Project updatedProject) {
         return projectRepository.findById(id)
                 .map(project -> {

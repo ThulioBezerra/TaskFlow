@@ -1,7 +1,6 @@
 package com.taskflow.dto;
 
 import java.util.List;
-import java.util.UUID;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -15,5 +14,5 @@ public class CreateProjectRequest {
     @NotBlank(message = "Project name cannot be empty")
     private String name;
     private String description;
-    private List<UUID> memberIds; // Optional: IDs of additional members
+    private List<String> memberEmails; // Optional: IDs of additional members
 }

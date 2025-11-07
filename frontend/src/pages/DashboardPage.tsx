@@ -1,10 +1,10 @@
 // src/pages/DashboardPage.tsx
-import React, { useState } from 'react';
-import { Container, Typography, Button, Box } from '@mui/material';
-import useAuthStore from '../store/authStore';
-import KanbanBoard from '../components/KanbanBoard';
-import CreateProjectModal from '../components/CreateProjectModal';
-import CreateTaskModal from '../components/CreateTaskModal';
+import React, { useState } from "react";
+import { Container, Typography, Button, Box } from "@mui/material";
+import useAuthStore from "../store/authStore";
+import KanbanBoard from "../components/KanbanBoard";
+import CreateProjectModal from "../components/CreateProjectModal";
+import CreateTaskModal from "../components/CreateTaskModal";
 
 const DashboardPage: React.FC = () => {
   const { logout } = useAuthStore();
@@ -15,7 +15,7 @@ const DashboardPage: React.FC = () => {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [tasksVersion, setTasksVersion] = useState(0);
 
-  const token = localStorage.getItem('token') ?? '';
+  const token = localStorage.getItem("token") ?? "";
 
   // PROJECT MODAL
   const handleOpenProjectModal = () => setIsCreateProjectOpen(true);
@@ -39,9 +39,9 @@ const DashboardPage: React.FC = () => {
     <Container sx={{ py: 4 }}>
       <Box
         sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           mb: 3,
         }}
       >
@@ -49,7 +49,7 @@ const DashboardPage: React.FC = () => {
           Dashboard
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: "flex", gap: 2 }}>
           <Button
             variant="contained"
             color="primary"
@@ -66,11 +66,7 @@ const DashboardPage: React.FC = () => {
             Criar nova task
           </Button>
 
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={logout}
-          >
+          <Button variant="outlined" color="secondary" onClick={logout}>
             Logout
           </Button>
         </Box>
@@ -83,17 +79,19 @@ const DashboardPage: React.FC = () => {
       />
 
       {/* Modal de Projeto */}
-      <CreateProjectModal
-        isOpen={isCreateProjectOpen}
-        onClose={handleCloseProjectModal}
-        onCreateProject={handleProjectCreated}
-      />
+      {isCreateProjectOpen && (
+        <CreateProjectModal
+          isOpen={isCreateProjectOpen}
+          onClose={handleCloseProjectModal}
+          onCreateProject={handleProjectCreated}
+        />
+      )}
 
       {/* Modal de Task */}
       {isCreateTaskOpen && (
         <CreateTaskModal
           onClose={handleCloseTaskModal}
-          token={token}
+          isOpen={isCreateTaskOpen}
           onTaskCreated={handleTaskCreated}
         />
       )}

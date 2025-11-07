@@ -1,19 +1,18 @@
 // src/components/KanbanBoard.tsx
-import React, { useState, useEffect } from 'react';
-import { DndContext, closestCenter } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import KanbanColumn from './KanbanColumn';
-import { getTasks, updateTaskStatus } from '../services/taskService';
-import { getProjects } from '../services/projectService';
-import type { Task, TaskStatus } from './TaskCard';
-import type { ProjectSummary } from '../types';
-import TaskDetailsModal from './TaskDetailsModal';
+import React, { useState, useMemo } from "react";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import KanbanColumn from "./KanbanColumn";
+import { getTasks, updateTaskStatus } from "../services/taskService";
+import { useProjectsByUser } from "../hooks/useProjectsByUser";
+import type { Task, TaskStatus } from "./TaskCard";
+import type { ProjectSummary } from "../types";
+import TaskDetailsModal from "./TaskDetailsModal";
 
-// Ajuda a normalizar qualquer formato que vier do backend
 function normalizeProjects(resp: unknown): ProjectSummary[] {
   if (Array.isArray(resp)) return resp;
-  // casos comuns: { content: [...] } ou { data: [...] }
+
   const anyResp = resp as any;
   if (Array.isArray(anyResp?.content)) return anyResp.content;
   if (Array.isArray(anyResp?.data)) return anyResp.data;
@@ -25,31 +24,38 @@ interface KanbanBoardProps {
   tasksVersion?: number;
 }
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectsVersion, tasksVersion }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({
+  tasksVersion,
+}) => {
   const queryClient = useQueryClient();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [projects, setProjects] = useState<ProjectSummary[]>([]);
-  const [filterProjectId, setFilterProjectId] = useState<string | undefined>(undefined);
+  const [filterProjectId, setFilterProjectId] = useState<string | undefined>(
+    undefined
+  );
+  const { projects: fetchedProjects } = useProjectsByUser();
 
-  useEffect(() => {
-    const fetchProjectsSafe = async () => {
-      try {
-        const fetched = await getProjects();
-        const normalized = normalizeProjects(fetched);
-        setProjects(normalized);
-        if (!Array.isArray(fetched)) {
-          console.warn('getProjects() não retornou array. Normalizado para []/content.', fetched);
-        }
-      } catch (err) {
-        console.error('Error fetching projects:', err);
-        setProjects([]); // evita quebrar o map
+  const projects = useMemo(() => {
+    try {
+      const normalized = normalizeProjects(fetchedProjects);
+
+      if (fetchedProjects && !Array.isArray(normalized)) {
+        console.warn(
+          "Data from useProjectsByUser() was not an array and could not be normalized.",
+          fetchedProjects
+        );
+        return []; 
       }
-    };
-    fetchProjectsSafe();
-  }, [projectsVersion]);
+
+      return normalized;
+    } catch (err) {
+      console.error("Error normalizing projects:", err);
+      return [];
+    }
+  }, [fetchedProjects]); 
+
 
   const { data: tasks = [], isLoading } = useQuery<Task[]>({
-    queryKey: ['tasks', tasksVersion],
+    queryKey: ["tasks", tasksVersion],
     queryFn: () => getTasks(),
   });
 
@@ -57,7 +63,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectsVersion, tasksVersion
     mutationFn: ({ id, status }: { id: string; status: TaskStatus }) =>
       updateTaskStatus(id, status),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 
@@ -80,20 +86,20 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectsVersion, tasksVersion
     : tasks;
 
   const columns = {
-    TO_DO: filteredTasks.filter((t) => t.status === 'TO_DO'),
-    IN_PROGRESS: filteredTasks.filter((t) => t.status === 'IN_PROGRESS'),
-    DONE: filteredTasks.filter((t) => t.status === 'DONE'),
+    TO_DO: filteredTasks.filter((t) => t.status === "TO_DO"),
+    IN_PROGRESS: filteredTasks.filter((t) => t.status === "IN_PROGRESS"),
+    DONE: filteredTasks.filter((t) => t.status === "DONE"),
   };
 
   const projectOptions = Array.isArray(projects) ? projects : [];
 
   return (
     <>
-      <div style={{ marginBottom: '10px', textAlign: 'center' }}>
+      <div style={{ marginBottom: "10px", textAlign: "center" }}>
         <label htmlFor="projectFilter">Filter by Project: </label>
         <select
           id="projectFilter"
-          value={filterProjectId || ''}
+          value={filterProjectId || ""}
           onChange={(e) => setFilterProjectId(e.target.value || undefined)}
         >
           <option value="">All Projects</option>
@@ -106,7 +112,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectsVersion, tasksVersion
       </div>
 
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
           <KanbanColumn
             id="TO_DO"
             title="To Do"

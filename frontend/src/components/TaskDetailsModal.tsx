@@ -1,28 +1,39 @@
-import React from 'react';
-import { TaskStatus } from './TaskCard';
-import type { Task } from './TaskCard';
-import CommentsSection from './CommentsSection';
-import AttachmentsSection from './AttachmentsSection';
-import { useTaskDetails } from '../hooks/useTaskDetails';
+import React from "react";
+import { TaskStatus } from "./TaskCard";
+import type { Task } from "./TaskCard";
+import CommentsSection from "./CommentsSection";
+import AttachmentsSection from "./AttachmentsSection";
+import { useTaskDetails } from "../hooks/useTasks";
+import { useUsers } from "../hooks/useUsers";
 
 interface TaskDetailsModalProps {
   task: Task;
   onClose: () => void;
 }
 
-const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose }) => {
+const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
+  task,
+  onClose,
+}) => {
   const {
     // estado
-    title, setTitle,
-    description, setDescription,
-    priority, setPriority,
-    dueDate, setDueDate,
-    status, setStatus,
-    selectedAssigneeId, setSelectedAssigneeId,
-    selectedProjectId, setSelectedProjectId,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    priority,
+    setPriority,
+    dueDate,
+    setDueDate,
+    status,
+    setStatus,
+    selectedAssigneeId,
+    setSelectedAssigneeId,
+    selectedProjectId,
+    setSelectedProjectId,
 
-    // dados
-    allUsers, projects, comments,
+    projects,
+    comments,
 
     // carregamento/mutações
     loadingAny,
@@ -33,7 +44,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose }) =>
     handleSubmit,
     handleDelete,
   } = useTaskDetails({ task, onClose });
-
+  const { users: allUsers } = useUsers();
   return (
     <div className="modal">
       <div className="modal-content">
@@ -67,8 +78,10 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose }) =>
                 <label htmlFor="project">Project</label>
                 <select
                   id="project"
-                  value={selectedProjectId || ''}
-                  onChange={(e) => setSelectedProjectId(e.target.value || undefined)}
+                  value={selectedProjectId || ""}
+                  onChange={(e) =>
+                    setSelectedProjectId(e.target.value || undefined)
+                  }
                 >
                   <option value="">-- No Project --</option>
                   {projects.map((project) => (
@@ -88,7 +101,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose }) =>
                 >
                   {Object.values(TaskStatus).map((s) => (
                     <option key={s} value={s}>
-                      {s.replace(/_/g, ' ')}
+                      {s.replace(/_/g, " ")}
                     </option>
                   ))}
                 </select>
@@ -118,8 +131,10 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose }) =>
                 <label htmlFor="assignee">Assignee</label>
                 <select
                   id="assignee"
-                  value={selectedAssigneeId ?? ''} // usamos email como value
-                  onChange={(e) => setSelectedAssigneeId(e.target.value || undefined)}
+                  value={selectedAssigneeId ?? ""} // usamos email como value
+                  onChange={(e) =>
+                    setSelectedAssigneeId(e.target.value || undefined)
+                  }
                 >
                   <option value="">-- No Assignee --</option>
                   {allUsers.map((user) => (
@@ -131,16 +146,18 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose }) =>
               </div>
 
               <button type="submit" disabled={updateIsPending}>
-                {updateIsPending ? 'Saving...' : 'Save'}
+                {updateIsPending ? "Saving..." : "Save"}
               </button>
-              <button type="button" onClick={onClose}>Cancel</button>
+              <button type="button" onClick={onClose}>
+                Cancel
+              </button>
               <button
                 type="button"
                 onClick={handleDelete}
-                style={{ backgroundColor: 'red', color: 'white' }}
+                style={{ backgroundColor: "red", color: "white" }}
                 disabled={deleteIsPending}
               >
-                {deleteIsPending ? 'Deleting...' : 'Delete'}
+                {deleteIsPending ? "Deleting..." : "Delete"}
               </button>
             </form>
 

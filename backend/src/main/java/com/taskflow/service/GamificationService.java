@@ -1,5 +1,6 @@
 package com.taskflow.service;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -37,6 +38,12 @@ public class GamificationService {
         Optional<Badge> badgeOptional = badgeRepository.findByName(badgeName);
         if (badgeOptional.isPresent()) {
             Badge badge = badgeOptional.get();
+            if (Objects.isNull(user)) {
+                throw new IllegalArgumentException("User cannot be null");
+            }
+            if (Objects.isNull(user.getBadges())) {
+                throw new IllegalArgumentException("Bagde cannot be null");
+            }
             if (!user.getBadges().contains(badge)) {
                 user.getBadges().add(badge);
                 userRepository.save(user);
