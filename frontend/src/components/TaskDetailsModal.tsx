@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateTask } from '../services/taskService';
+import { updateTask, deleteTask } from '../services/taskService';
 import { getProjects } from '../services/projectService';
+import { getUsers } from '../services/userService';
 import type { Task } from './TaskCard';
 import CommentsSection from './CommentsSection';
 import AttachmentsSection from './AttachmentsSection';
 import { fetchCommentsForTask } from '../services/taskService';
-import type { Comment, ProjectSummary } from '../types';
+import type { Comment, ProjectSummary, UserSummary } from '../types';
+
+enum TaskStatus {
+    TO_DO = 'TO_DO',
+    IN_PROGRESS = 'IN_PROGRESS',
+    DONE = 'DONE',
+}
 
 interface TaskDetailsModalProps {
     task: Task;
@@ -18,27 +25,43 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
     const queryClient = useQueryClient();
     const [title, setTitle] = useState(task.title);
     const [description, setDescription] = useState(task.description);
+    const [priority, setPriority] = useState(task.priority || 0);
+    const [dueDate, setDueDate] = useState(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
+    const [status, setStatus] = useState<TaskStatus>(task.status);
+    const [selectedAssigneeId, setSelectedAssigneeId] = useState<string | undefined>(task.assignee?.id);
     const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(task.project?.id);
     const [projects, setProjects] = useState<ProjectSummary[]>([]);
+    const [users, setUsers] = useState<UserSummary[]>([]);
     const [comments, setComments] = useState<Comment[]>([]);
 
     useEffect(() => {
-        const loadCommentsAndProjects = async () => {
+        const loadCommentsProjectsAndUsers = async () => {
             try {
                 const fetchedComments = await fetchCommentsForTask(task.id, token);
                 setComments(fetchedComments);
 
                 const fetchedProjects = await getProjects(token);
                 setProjects(fetchedProjects);
+
+                const fetchedUsers = await getUsers(token);
+                setUsers(fetchedUsers);
             } catch (error) {
                 console.error('Failed to fetch data:', error);
             }
         };
-        loadCommentsAndProjects();
+        loadCommentsProjectsAndUsers();
     }, [task.id, token]);
 
-    const mutation = useMutation({
+    const updateMutation = useMutation({
         mutationFn: (updatedTask: Partial<Task>) => updateTask(task.id, updatedTask, token),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            onClose();
+        },
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: () => deleteTask(task.id, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
             onClose();
@@ -47,7 +70,21 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        mutation.mutate({ title, description, projectId: selectedProjectId === undefined ? undefined : selectedProjectId === '' ? null : selectedProjectId });
+        updateMutation.mutate({
+            title,
+            description,
+            priority,
+            dueDate: dueDate || null,
+            status,
+            assigneeId: selectedAssigneeId === undefined ? undefined : selectedAssigneeId === '' ? null : selectedAssigneeId,
+            projectId: selectedProjectId === undefined ? undefined : selectedProjectId === '' ? null : selectedProjectId
+        });
+    };
+
+    const handleDelete = () => {
+        if (window.confirm('Are you sure you want to delete this task?')) {
+            deleteMutation.mutate();
+        }
     };
 
     return (
@@ -87,9 +124,56 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
                             ))}
                         </select>
                     </div>
-                    {/* Add other form fields here */}
+                    <div>
+                        <label htmlFor="status">Status</label>
+                        <select
+                            id="status"
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value as TaskStatus)}
+                        >
+                            {Object.values(TaskStatus).map((s) => (
+                                <option key={s} value={s}>
+                                    {s.replace(/_/g, ' ')}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="priority">Priority</label>
+                        <input
+                            type="number"
+                            id="priority"
+                            value={priority}
+                            onChange={(e) => setPriority(parseInt(e.target.value))}
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="dueDate">Due Date</label>
+                        <input
+                            type="date"
+                            id="dueDate"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="assignee">Assignee</label>
+                        <select
+                            id="assignee"
+                            value={selectedAssigneeId || ''}
+                            onChange={(e) => setSelectedAssigneeId(e.target.value || undefined)}
+                        >
+                            <option value="">-- No Assignee --</option>
+                            {users.map((user) => (
+                                <option key={user.id} value={user.id}>
+                                    {user.email}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     <button type="submit">Save</button>
                     <button type="button" onClick={onClose}>Cancel</button>
+                    <button type="button" onClick={handleDelete} style={{ backgroundColor: 'red', color: 'white' }}>Delete</button>
                 </form>
                 <CommentsSection
                     taskId={task.id}
