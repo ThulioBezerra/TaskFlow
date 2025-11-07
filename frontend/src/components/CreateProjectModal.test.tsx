@@ -1,8 +1,8 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CreateProjectModal from './CreateProjectModal';
-import projectService from '../services/projectService';
 import '@testing-library/jest-dom';
 import toast from 'react-hot-toast';
+import { searchUsers, createProject } from '../services/projectService';
 
 // Mock the projectService and toast
 vi.mock('../services/projectService');
@@ -15,12 +15,12 @@ describe('CreateProjectModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Mock searchUsers to return some users
-    (projectService.searchUsers as any).mockResolvedValue([
+    (searchUsers as any).mockResolvedValue([
       { id: '1', name: 'Alice Smith' },
       { id: '2', name: 'Bob Johnson' },
     ]);
     // Mock createProject to succeed
-    (projectService.createProject as any).mockResolvedValue({});
+    (createProject as any).mockResolvedValue({});
   });
 
   it('does not render when isOpen is false', () => {
@@ -70,7 +70,7 @@ describe('CreateProjectModal', () => {
     );
 
     fireEvent.change(screen.getByPlaceholderText(/Search users.../i), { target: { value: 'alice' } });
-    expect(projectService.searchUsers).toHaveBeenCalledWith('alice');
+    expect(searchUsers).toHaveBeenCalledWith('alice');
 
     // Wait for search results to appear
     const aliceUser = await screen.findByText('Alice Smith');
@@ -111,7 +111,7 @@ describe('CreateProjectModal', () => {
     fireEvent.change(screen.getByLabelText(/Project Name:/i), { target: { value: 'New Project' } });
     fireEvent.click(screen.getByRole('button', { name: /Create Project/i }));
 
-    expect(projectService.createProject).toHaveBeenCalledWith({
+    expect(createProject).toHaveBeenCalledWith({
       name: 'New Project',
       description: '',
       managerId: '1',
@@ -125,7 +125,7 @@ describe('CreateProjectModal', () => {
   });
 
   it('shows error toast on failed project creation', async () => {
-    (projectService.createProject as any).mockRejectedValue(new Error('API Error'));
+    (createProject as any).mockRejectedValue(new Error('API Error'));
 
     render(
       <CreateProjectModal

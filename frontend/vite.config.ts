@@ -8,4 +8,14 @@ export default defineConfig({
     environment: 'jsdom',    // simula navegador
     setupFiles: './src/setupTests.ts', // arquivo de setup
   },
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+    preserveSymlinks: false, // força resolver para o node_modules do app
+  },
+  server: {
+  proxy: {
+    '/api': { target: 'http://localhost:8080', changeOrigin: true }
+  }
+}
+
 });

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createTask } from '../services/taskService';
+import { getProjects } from '../services/projectService';
+import { ProjectSummary } from '../types';
 
 interface CreateTaskModalProps {
     onClose: () => void;
@@ -9,7 +11,22 @@ interface CreateTaskModalProps {
 const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, token }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
+    const [projects, setProjects] = useState<ProjectSummary[]>([]);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                const fetchedProjects = await getProjects(token);
+                setProjects(fetchedProjects);
+            } catch (err) {
+                console.error('Error fetching projects:', err);
+                setError('Failed to load projects.');
+            }
+        };
+        fetchProjects();
+    }, [token]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -21,7 +38,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, token }) => 
         }
 
         try {
-            await createTask({ title, description }, token);
+            await createTask({ title, description, projectId: selectedProjectId }, token);
             onClose();
         } catch (err) {
             console.error('Error creating task:', err);
@@ -50,6 +67,21 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, token }) => 
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
+                    </div>
+                    <div>
+                        <label htmlFor="project">Project</label>
+                        <select
+                            id="project"
+                            value={selectedProjectId || ''}
+                            onChange={(e) => setSelectedProjectId(e.target.value || undefined)}
+                        >
+                            <option value="">-- No Project --</option>
+                            {projects.map((project) => (
+                                <option key={project.id} value={project.id}>
+                                    {project.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     {error && <p className="error">{error}</p>}
                     <button type="submit">Create Task</button>

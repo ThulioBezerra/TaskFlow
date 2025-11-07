@@ -15,7 +15,7 @@ export const getTasks = async (token: string) => {
     return response.json();
 };
 
-export const createTask = async (task: { title: string; description: string }, token: string) => {
+export const createTask = async (task: { title: string; description: string; projectId?: string }, token: string) => {
     const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -32,14 +32,24 @@ export const createTask = async (task: { title: string; description: string }, t
     return response.json();
 };
 
-export const updateTask = async (id: string, task: Partial<Task>, token: string) => {
+export const updateTask = async (id: string, task: Partial<Task> & { projectId?: string | null }, token: string) => {
+    const body = { ...task };
+    if (body.projectId === undefined) {
+        // If projectId is not provided in the frontend, do not send it to the backend
+        // This allows partial updates without affecting the project association
+        delete body.projectId;
+    } else if (body.projectId === null) {
+        // If projectId is explicitly null, send it as null to disassociate
+        body.projectId = null; // Ensure it's explicitly null for JSON serialization
+    }
+
     const response = await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(task)
+        body: JSON.stringify(body)
     });
 
     if (!response.ok) {

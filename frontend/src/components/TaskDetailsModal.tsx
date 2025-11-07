@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateTask } from '../services/taskService';
+import { getProjects } from '../services/projectService';
 import type { Task } from './TaskCard';
 import CommentsSection from './CommentsSection';
 import AttachmentsSection from './AttachmentsSection';
 import { fetchCommentsForTask } from '../services/taskService';
-import type { Comment } from '../types';
+import type { Comment, ProjectSummary } from '../types';
 
 interface TaskDetailsModalProps {
     task: Task;
@@ -17,18 +18,23 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
     const queryClient = useQueryClient();
     const [title, setTitle] = useState(task.title);
     const [description, setDescription] = useState(task.description);
+    const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(task.project?.id);
+    const [projects, setProjects] = useState<ProjectSummary[]>([]);
     const [comments, setComments] = useState<Comment[]>([]);
 
     useEffect(() => {
-        const loadComments = async () => {
+        const loadCommentsAndProjects = async () => {
             try {
                 const fetchedComments = await fetchCommentsForTask(task.id, token);
                 setComments(fetchedComments);
+
+                const fetchedProjects = await getProjects(token);
+                setProjects(fetchedProjects);
             } catch (error) {
-                console.error('Failed to fetch comments:', error);
+                console.error('Failed to fetch data:', error);
             }
         };
-        loadComments();
+        loadCommentsAndProjects();
     }, [task.id, token]);
 
     const mutation = useMutation({
@@ -41,7 +47,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        mutation.mutate({ title, description });
+        mutation.mutate({ title, description, projectId: selectedProjectId === undefined ? undefined : selectedProjectId === '' ? null : selectedProjectId });
     };
 
     return (
@@ -65,6 +71,21 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose, toke
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
+                    </div>
+                    <div>
+                        <label htmlFor="project">Project</label>
+                        <select
+                            id="project"
+                            value={selectedProjectId || ''}
+                            onChange={(e) => setSelectedProjectId(e.target.value || undefined)}
+                        >
+                            <option value="">-- No Project --</option>
+                            {projects.map((project) => (
+                                <option key={project.id} value={project.id}>
+                                    {project.name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     {/* Add other form fields here */}
                     <button type="submit">Save</button>

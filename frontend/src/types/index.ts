@@ -7,10 +7,11 @@ export interface Badge {
 
 export interface Attachment {
     id: string;
-    name: string;
-    url: string;
-    type: string;
     fileName: string;
+    fileType: string;
+    url: string;
+    taskId: string;
+    uploadedAt: string;
 }
 
 export interface Comment {
@@ -18,4 +19,9 @@ export interface Comment {
     content: string;
     author: { id: string; username: string; };
     timestamp: string;
+}
+
+export interface ProjectSummary {
+    id: string;
+    name: string;
 }

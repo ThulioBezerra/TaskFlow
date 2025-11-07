@@ -1,21 +1,28 @@
 package com.taskflow.controller;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.taskflow.dto.CreateProjectRequest;
 import com.taskflow.dto.ProjectResponse;
 import com.taskflow.model.Project;
 import com.taskflow.model.User;
 import com.taskflow.service.ProjectService;
 import com.taskflow.service.UserService;
-import jakarta.validation.Valid;
-import org.springframework.validation.BindingResult;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.UUID;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -24,7 +31,6 @@ public class ProjectController {
     private final ProjectService projectService;
     private final UserService userService; // Assuming a UserService exists for fetching User details
 
-    @Autowired
     public ProjectController(ProjectService projectService, UserService userService) {
         this.projectService = projectService;
         this.userService = userService;
@@ -33,7 +39,8 @@ public class ProjectController {
     @PostMapping
     public ResponseEntity<?> createProject(@Valid @RequestBody CreateProjectRequest request, BindingResult result) {
         // TODO: Implement authentication and authorization checks here
-        // Only authenticated users with appropriate roles should be able to create projects
+        // Only authenticated users with appropriate roles should be able to create
+        // projects
         if (result.hasErrors()) {
             return new ResponseEntity<>(result.getAllErrors(), HttpStatus.BAD_REQUEST);
         }
@@ -70,7 +77,8 @@ public class ProjectController {
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getAllProjects() {
         // TODO: Implement authentication and authorization checks here
-        // Only authenticated users should be able to view projects, potentially filtered by membership
+        // Only authenticated users should be able to view projects, potentially
+        // filtered by membership
         List<Project> projects = projectService.getAllProjects();
         List<ProjectResponse> projectDtos = projects.stream()
                 .map(this::convertToDto)
@@ -81,16 +89,19 @@ public class ProjectController {
     @GetMapping("/{projectId}")
     public ResponseEntity<ProjectResponse> getProjectById(@PathVariable UUID projectId) {
         // TODO: Implement authentication and authorization checks here
-        // Only authenticated users who are members of the project should be able to view it
+        // Only authenticated users who are members of the project should be able to
+        // view it
         return projectService.getProjectById(projectId)
                 .map(project -> new ResponseEntity<>(convertToDto(project), HttpStatus.OK))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @PutMapping("/{projectId}")
-    public ResponseEntity<?> updateProject(@PathVariable UUID projectId, @Valid @RequestBody CreateProjectRequest request, BindingResult result) {
+    public ResponseEntity<?> updateProject(@PathVariable UUID projectId,
+            @Valid @RequestBody CreateProjectRequest request, BindingResult result) {
         // TODO: Implement authentication and authorization checks here
-        // Only authenticated users with 'Manager' or 'Administrator' roles for this project should be able to update it
+        // Only authenticated users with 'Manager' or 'Administrator' roles for this
+        // project should be able to update it
         if (result.hasErrors()) {
             return new ResponseEntity<>(result.getAllErrors(), HttpStatus.BAD_REQUEST);
         }

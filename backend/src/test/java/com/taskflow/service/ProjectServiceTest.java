@@ -47,7 +47,7 @@ class ProjectServiceTest {
                 .role(UserRole.COLLABORATOR)
                 .createdAt(OffsetDateTime.now())
                 .build();
-        Project project = new Project(null, "Test Project", "Description", null, null);
+        Project project = new Project(null, "Test Project", "Description", new java.util.ArrayList<>(), null);
 
         when(userRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
         when(projectRepository.save(any(Project.class))).thenReturn(project);
@@ -63,7 +63,7 @@ class ProjectServiceTest {
 
     @Test
     void createProject_managerNotFound_throwsException() {
-        Project project = new Project(null, "Test Project", "Description", null, null);
+        Project project = new Project(null, "Test Project", "Description", new java.util.ArrayList<>(), null);
         UUID managerId = UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
         when(userRepository.findById(managerId)).thenReturn(Optional.empty());
 
@@ -124,7 +124,7 @@ class ProjectServiceTest {
                 .createdAt(OffsetDateTime.now())
                 .build();
         Project existingProject = new Project(UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"), "Old Name", "Old Description", Arrays.asList(manager), manager);
-        Project updatedDetails = new Project(null, "New Name", "New Description", null, null);
+        Project updatedDetails = new Project(null, "New Name", "New Description", new java.util.ArrayList<>(), null);
 
         when(projectRepository.findById(existingProject.getId())).thenReturn(Optional.of(existingProject));
         when(projectRepository.save(any(Project.class))).thenReturn(existingProject);
@@ -139,7 +139,7 @@ class ProjectServiceTest {
 
     @Test
     void updateProject_projectNotFound_throwsException() {
-        Project updatedDetails = new Project(null, "New Name", "New Description", null, null);
+        Project updatedDetails = new Project(null, "New Name", "New Description", new java.util.ArrayList<>(), null);
         UUID projectId = UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
         when(projectRepository.findById(projectId)).thenReturn(Optional.empty());
 

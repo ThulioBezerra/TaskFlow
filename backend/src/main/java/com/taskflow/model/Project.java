@@ -32,4 +32,16 @@ public class Project {
     @ManyToOne
     @JoinColumn(name = "manager_id")
     private User manager;
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<Task> tasks;
+
+    public Project(UUID id, String name, String description, List<User> members, User manager) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.members = members;
+        this.manager = manager;
+        this.tasks = new java.util.ArrayList<>(); // Initialize tasks list
+    }
 }

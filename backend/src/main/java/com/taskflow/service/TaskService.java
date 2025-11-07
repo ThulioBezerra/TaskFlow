@@ -1,22 +1,28 @@
 package com.taskflow.service;
 
-import com.taskflow.dto.*;
-import com.taskflow.exception.ResourceNotFoundException;
-import com.taskflow.model.Project;
-import com.taskflow.model.Task;
-import com.taskflow.model.User;
-import com.taskflow.model.TaskStatus;
-import com.taskflow.repository.ProjectRepository;
-import com.taskflow.repository.TaskRepository;
-import com.taskflow.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.taskflow.dto.CreateTaskRequest;
+import com.taskflow.dto.ProjectSummaryDto;
+import com.taskflow.dto.TaskDto;
+import com.taskflow.dto.UpdateTaskRequest;
+import com.taskflow.dto.UserSummaryDto;
+import com.taskflow.exception.ResourceNotFoundException;
+import com.taskflow.model.Project;
+import com.taskflow.model.Task;
+import com.taskflow.model.TaskStatus;
+import com.taskflow.model.User;
+import com.taskflow.repository.ProjectRepository;
+import com.taskflow.repository.TaskRepository;
+import com.taskflow.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +51,13 @@ public class TaskService {
         task.setAuthor(author);
         task.setCreatedAt(OffsetDateTime.now());
         task.setStatus(com.taskflow.model.TaskStatus.TO_DO);
+
+        request.getProjectId().ifPresent(projectId -> {
+            Project project = projectRepository.findById(projectId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+            task.setProject(project);
+        });
+
         Task savedTask = taskRepository.save(task);
         return toDto(savedTask);
     }
@@ -53,27 +66,40 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-        if (request.getTitle() != null) {
+        if (request.getTitle() != null)
             task.setTitle(request.getTitle());
-        }
-        if (request.getDescription() != null) {
+        if (request.getDescription() != null)
             task.setDescription(request.getDescription());
-        }
-        if (request.getPriority() != null) {
+        if (request.getPriority() != null)
             task.setPriority(request.getPriority());
-        }
-        if (request.getDueDate() != null) {
+        if (request.getDueDate() != null)
             task.setDueDate(request.getDueDate());
-        }
+
         if (request.getAssigneeId() != null) {
             User assignee = userRepository.findById(request.getAssigneeId())
                     .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
             task.setAssignee(assignee);
         }
+
         if (request.getStatus() != null) {
             task.setStatus(request.getStatus());
             if (request.getStatus() == TaskStatus.COMPLETED) {
                 gamificationService.checkAndAwardBadges(task.getAssignee());
+            }
+        }
+
+        // ✅ TRI-ESTADO para projectId:
+        // null -> não tocar (campo ausente no payload)
+        // Optional.of -> associar ao projeto informado
+        // Optional.empty() -> DESASSOCIAR (set null)
+        if (request.getProjectId() != null) {
+            if (request.getProjectId().isPresent()) {
+                UUID projectId = request.getProjectId().get();
+                Project project = projectRepository.findById(projectId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+                task.setProject(project);
+            } else {
+                task.setProject(null); // remover associação
             }
         }
 
@@ -101,8 +127,7 @@ public class TaskService {
                 task.getDueDate(),
                 task.getCreatedAt(),
                 assigneeSummary,
-                projectSummary
-        );
+                projectSummary);
     }
 
     public Task getTaskById(UUID taskId) {

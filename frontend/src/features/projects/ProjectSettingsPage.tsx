@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import projectService from '../../services/projectService';
+import * as projectService from '../../services/projectService';
 import toast from 'react-hot-toast';
 import './ProjectSettingsPage.css';
 

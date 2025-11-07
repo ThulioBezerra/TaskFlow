@@ -1,15 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import KanbanColumn from './KanbanColumn';
 import { getTasks, updateTaskStatus } from '../services/taskService';
+import { getProjects } from '../services/projectService';
 import type { Task } from './TaskCard';
+import type { ProjectSummary } from '../types';
 import TaskDetailsModal from './TaskDetailsModal';
 
 const KanbanBoard: React.FC = () => {
     const queryClient = useQueryClient();
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [projects, setProjects] = useState<ProjectSummary[]>([]);
+    const [filterProjectId, setFilterProjectId] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                const fetchedProjects = await getProjects("DUMMY_TOKEN");
+                setProjects(fetchedProjects);
+            } catch (err) {
+                console.error('Error fetching projects:', err);
+            }
+        };
+        fetchProjects();
+    }, []);
 
     const { data: tasks = [], isLoading } = useQuery<Task[]>({
         queryKey: ['tasks'],
@@ -38,14 +54,33 @@ const KanbanBoard: React.FC = () => {
         return <div>Loading...</div>;
     }
 
+    const filteredTasks = filterProjectId
+        ? tasks.filter(task => task.project?.id === filterProjectId)
+        : tasks;
+
     const columns = {
-        'TO_DO': tasks.filter(t => t.status === 'TO_DO'),
-        'IN_PROGRESS': tasks.filter(t => t.status === 'IN_PROGRESS'),
-        'DONE': tasks.filter(t => t.status === 'DONE'),
+        'TO_DO': filteredTasks.filter(t => t.status === 'TO_DO'),
+        'IN_PROGRESS': filteredTasks.filter(t => t.status === 'IN_PROGRESS'),
+        'DONE': filteredTasks.filter(t => t.status === 'DONE'),
     };
 
     return (
         <>
+            <div style={{ marginBottom: '10px', textAlign: 'center' }}>
+                <label htmlFor="projectFilter">Filter by Project: </label>
+                <select
+                    id="projectFilter"
+                    value={filterProjectId || ''}
+                    onChange={(e) => setFilterProjectId(e.target.value || undefined)}
+                >
+                    <option value="">All Projects</option>
+                    {projects.map((project) => (
+                        <option key={project.id} value={project.id}>
+                            {project.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
             <DndContext
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}

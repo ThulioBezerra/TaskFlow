@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
 
 @Data
@@ -21,4 +22,5 @@ public class UpdateTaskRequest {
     private LocalDate dueDate;
     private UUID assigneeId;
     private TaskStatus status;
+    private java.util.Optional<java.util.UUID> projectId;
 }

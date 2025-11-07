@@ -1,8 +1,7 @@
-import axios from 'axios';
+// src/services/projectService.ts
+import type { ProjectSummary } from '../types';
 
-const API_URL = '/api/projects';
-
-interface Project {
+export interface ProjectDetails {
   id: string;
   name: string;
   description: string;
@@ -10,53 +9,83 @@ interface Project {
   members: { id: string; username: string; email: string }[];
 }
 
-interface CreateProjectPayload {
-  name: string;
-  description: string;
-  managerId: string; // Assuming managerId is a string on frontend for now
-  memberIds: string[];
+const API_BASE_URL = 'http://localhost:8080/api';
+
+function getAuthToken(override?: string) {
+  return override ?? localStorage.getItem('token') ?? '';
 }
 
-interface UpdateProjectPayload {
-  name: string;
-  description: string;
+async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+  tokenOverride?: string
+): Promise<T> {
+  const token = getAuthToken(tokenOverride);
+
+  const resp = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers ?? {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!resp.ok) {
+    // tenta parsear JSON; se não der, usa texto simples
+    let message = `HTTP ${resp.status}`;
+    try {
+      const data = await resp.json();
+      message = data?.message || message;
+    } catch {
+      try {
+        const text = await resp.text();
+        if (text) message = text;
+      } catch {
+        /* ignore */
+      }
+    }
+    throw new Error(message);
+  }
+
+  // algumas respostas podem vir sem body
+  try {
+    return (await resp.json()) as T;
+  } catch {
+    return undefined as unknown as T;
+  }
 }
 
-const projectService = {
-  createProject: async (projectData: CreateProjectPayload): Promise<Project> => {
-    const response = await axios.post<Project>(API_URL, projectData);
-    return response.data;
-  },
+export async function getProjects(tokenOverride?: string): Promise<ProjectSummary[]> {
+  return apiFetch<ProjectSummary[]>('/projects', { method: 'GET' }, tokenOverride);
+}
 
-  getProjectById: async (id: string): Promise<Project> => {
-    const response = await axios.get<Project>(`${API_URL}/${id}`);
-    return response.data;
-  },
+export async function getProjectById(
+  id: string,
+  tokenOverride?: string
+): Promise<ProjectDetails> { // ✅ era ProjectSummary
+  return apiFetch<ProjectDetails>(`/projects/${id}`, { method: 'GET' }, tokenOverride);
+}
 
-  getAllProjects: async (): Promise<Project[]> => {
-    const response = await axios.get<Project[]>(API_URL);
-    return response.data;
-  },
+export async function createProject(
+  project: { name: string; description: string; managerId: string; memberIds: string[] },
+  tokenOverride?: string
+): Promise<ProjectDetails> { // ✅ se o backend retorna o objeto completo
+  return apiFetch<ProjectDetails>(
+    '/projects',
+    { method: 'POST', body: JSON.stringify(project) },
+    tokenOverride
+  );
+}
 
-  updateProject: async (id: string, projectData: UpdateProjectPayload): Promise<Project> => {
-    const response = await axios.put<Project>(`${API_URL}/${id}`, projectData);
-    return response.data;
-  },
-
-  // Mock user search for now, will integrate with a real user service later
-  searchUsers: async (searchTerm: string): Promise<{ id: string; name: string }[]> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockUsers = [
-          { id: '1', name: 'Alice Smith' },
-          { id: '2', name: 'Bob Johnson' },
-          { id: '3', name: 'Charlie Brown' },
-          { id: '4', name: 'Diana Prince' },
-        ];
-        resolve(mockUsers.filter(user => user.name.toLowerCase().includes(searchTerm.toLowerCase())));
-      }, 300);
-    });
-  },
-};
-
-export default projectService;
+export async function updateProject(
+  id: string,
+  project: { name: string; description: string; managerId?: string; memberIds?: string[] },
+  tokenOverride?: string
+): Promise<ProjectDetails> { // ✅ objeto completo
+  return apiFetch<ProjectDetails>(
+    `/projects/${id}`,
+    { method: 'PUT', body: JSON.stringify(project) },
+    tokenOverride
+  );
+}

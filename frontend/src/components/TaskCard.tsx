@@ -10,6 +10,8 @@ export type Task = {
     priority: 'LOW' | 'MEDIUM' | 'HIGH' | null;
     dueDate: string | null;
     assignee: { id: string; email: string } | null;
+    projectId?: string;
+    project?: { id: string; name: string };
 }
 
 interface TaskCardProps {
@@ -40,6 +42,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners} onClick={onClick}>
             <h4>{task.title}</h4>
+            {task.project && <p>Project: {task.project.name}</p>}
             <p>{task.description}</p>
         </div>
     );
