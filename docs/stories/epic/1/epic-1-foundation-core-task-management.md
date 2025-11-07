@@ -73,3 +73,17 @@ so that **I can keep my tasks up-to-date.**
 3.  The user can re-assign the task to another user in the project.
 4.  Changes are saved to the database upon submission.
 5.  The task card on the Kanban board reflects the updated information.
+
+### Story 1.7: Password Recovery
+As a **user who has forgotten my password**,
+I want to **request a password reset link via email**,
+so that **I can regain access to my account.**
+
+**Acceptance Criteria:**
+1.  A "Forgot Password?" link is available on the login page.
+2.  Clicking the link takes the user to a page where they can enter their email address.
+3.  Submitting the email triggers a backend process to send a password reset email.
+4.  The email contains a unique, time-limited link to a password reset page.
+5.  The password reset page allows the user to enter and confirm a new password.
+6.  Submitting the new password updates the user's password in the database.
+7.  The reset link/token is invalidated after use.
