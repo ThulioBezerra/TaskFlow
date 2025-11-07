@@ -1,15 +1,17 @@
 package com.taskflow.service;
 
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+
 import com.taskflow.model.Badge;
 import com.taskflow.model.TaskStatus;
 import com.taskflow.model.User;
 import com.taskflow.repository.BadgeRepository;
 import com.taskflow.repository.TaskRepository;
 import com.taskflow.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +22,7 @@ public class GamificationService {
     private final TaskRepository taskRepository;
 
     public void checkAndAwardBadges(User user) {
-        long completedTasks = taskRepository.countByAssigneeAndStatus(user, TaskStatus.COMPLETED);
+        long completedTasks = taskRepository.countByAssigneeAndStatus(user, TaskStatus.DONE);
 
         if (completedTasks >= 1) {
             awardBadge(user, "First Task Completed");

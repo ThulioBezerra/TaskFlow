@@ -30,3 +30,25 @@ export interface UserSummary {
   id: string;
   email: string;
 }
+
+export interface ProjectUser {
+  id: string;
+  email: string;
+}
+
+export interface ProjectResponse {
+  id: string;
+  name: string;
+  description: string | null;
+  manager: ProjectUser | null;
+  members: ProjectUser[];
+}
+
+export interface ProjectSummary {
+  id: string;
+  name: string;
+}
+
+export interface AllUsers {
+  email: string
+}

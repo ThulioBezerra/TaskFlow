@@ -38,7 +38,7 @@ public class AuthService {
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(UserRole.COLLABORATOR)
+                .role(request.getRole())
                 .build();
         userRepository.save(user);
     }
@@ -47,9 +47,7 @@ public class AuthService {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
-                        request.getPassword()
-                )
-        );
+                        request.getPassword()));
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow();
         var claims = new java.util.HashMap<String, Object>();
@@ -69,7 +67,8 @@ public class AuthService {
             userRepository.save(user);
 
             // Simulate sending an email
-            System.out.println("Password reset link for " + user.getEmail() + ": " + frontendUrl + "/reset-password/" + token);
+            System.out.println(
+                    "Password reset link for " + user.getEmail() + ": " + frontendUrl + "/reset-password/" + token);
         });
     }
 

@@ -1,6 +1,5 @@
 package com.taskflow.service;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -16,6 +15,7 @@ import com.taskflow.dto.UserSummaryDto;
 import com.taskflow.exception.ResourceNotFoundException;
 import com.taskflow.model.Project;
 import com.taskflow.model.Task;
+import com.taskflow.model.TaskPriority;
 import com.taskflow.model.TaskStatus;
 import com.taskflow.model.User;
 import com.taskflow.repository.ProjectRepository;
@@ -48,23 +48,28 @@ public class TaskService {
         Task task = new Task();
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
-        task.setPriority(request.getPriority());
+        task.setStatus(TaskStatus.TO_DO);
         task.setAuthor(author);
-        task.setCreatedAt(OffsetDateTime.now());
-        task.setStatus(com.taskflow.model.TaskStatus.TO_DO);
 
-        request.getProjectId().ifPresent(projectId -> {
+        // se não veio prioridade, define uma default:
+        task.setPriority(
+                request.getPriority() != null
+                        ? request.getPriority()
+                        : TaskPriority.MEDIUM);
+
+        UUID projectId = request.getProjectId();
+        if (projectId != null) {
             Project project = projectRepository.findById(projectId)
                     .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
             task.setProject(project);
-        });
+        }
 
         Task savedTask = taskRepository.save(task);
 
         // Send notification
         if (task.getProject() != null && task.getProject().getWebhookUrl() != null &&
-            task.getProject().getNotificationEvents() != null &&
-            task.getProject().getNotificationEvents().contains("Task Created")) {
+                task.getProject().getNotificationEvents() != null &&
+                task.getProject().getNotificationEvents().contains("Task Created")) {
             String message = "Task Created: " + savedTask.getTitle();
             notificationService.sendNotification(task.getProject().getWebhookUrl(), message);
         }
@@ -95,7 +100,7 @@ public class TaskService {
 
         if (request.getStatus() != null) {
             task.setStatus(request.getStatus());
-            if (request.getStatus() == TaskStatus.COMPLETED) {
+            if (request.getStatus() == TaskStatus.DONE) {
                 gamificationService.checkAndAwardBadges(task.getAssignee());
             }
         }
@@ -115,9 +120,9 @@ public class TaskService {
 
         // Send notification if status changed
         if (request.getStatus() != null && request.getStatus() != oldStatus &&
-            task.getProject() != null && task.getProject().getWebhookUrl() != null &&
-            task.getProject().getNotificationEvents() != null &&
-            task.getProject().getNotificationEvents().contains("Task Status Changed")) {
+                task.getProject() != null && task.getProject().getWebhookUrl() != null &&
+                task.getProject().getNotificationEvents() != null &&
+                task.getProject().getNotificationEvents().contains("Task Status Changed")) {
             String message = "Task '" + updatedTask.getTitle() + "' status changed to: " + updatedTask.getStatus();
             notificationService.sendNotification(task.getProject().getWebhookUrl(), message);
         }

@@ -5,11 +5,10 @@ import type { Comment } from '../types';
 interface CommentsSectionProps {
     taskId: string;
     comments: Comment[];
-    token: string;
     onCommentAdded: (newComment: Comment) => void;
 }
 
-const CommentsSection: React.FC<CommentsSectionProps> = ({ taskId, comments, token, onCommentAdded }) => {
+const CommentsSection: React.FC<CommentsSectionProps> = ({ taskId, comments, onCommentAdded }) => {
     const [newCommentContent, setNewCommentContent] = useState('');
 
     const handleAddComment = async (e: React.FormEvent) => {
@@ -17,7 +16,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ taskId, comments, tok
         if (!newCommentContent.trim()) return;
 
         try {
-            const addedComment = await addCommentToTask(taskId, newCommentContent, token);
+            const addedComment = await addCommentToTask(taskId, newCommentContent);
             onCommentAdded(addedComment);
             setNewCommentContent('');
         } catch (error) {

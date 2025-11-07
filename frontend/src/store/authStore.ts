@@ -1,16 +1,22 @@
-import {create} from 'zustand';
+// src/store/authStore.ts
+import { create } from 'zustand';
+import { getAuthToken, clearAuthToken } from '../utils/authCookie';
 
-const useAuthStore = create((set) => ({
-  token: localStorage.getItem('token') || null,
-  isAuthenticated: !!localStorage.getItem('token'),
-  login: (token) => {
-    localStorage.setItem('token', token);
-    set({ token, isAuthenticated: true });
-  },
+type AuthState = {
+  isAuthenticated: boolean;
+  login: () => void;
+  logout: () => void;
+  hydrate: () => void; // ler cookie ao iniciar
+};
+
+const useAuthStore = create<AuthState>((set) => ({
+  isAuthenticated: !!getAuthToken(),
+  login: () => set({ isAuthenticated: true }),
   logout: () => {
-    localStorage.removeItem('token');
-    set({ token: null, isAuthenticated: false });
+    clearAuthToken();
+    set({ isAuthenticated: false });
   },
+  hydrate: () => set({ isAuthenticated: !!getAuthToken() }),
 }));
 
 export default useAuthStore;

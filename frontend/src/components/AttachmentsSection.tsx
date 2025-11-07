@@ -5,10 +5,9 @@ import type { Attachment } from '../types';
 
 interface AttachmentsSectionProps {
     taskId: string;
-    token: string;
 }
 
-const AttachmentsSection: React.FC<AttachmentsSectionProps> = ({ taskId, token }) => {
+const AttachmentsSection: React.FC<AttachmentsSectionProps> = ({ taskId }) => {
     const queryClient = useQueryClient();
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [isDragging, setIsDragging] = useState(false);
@@ -17,18 +16,18 @@ const AttachmentsSection: React.FC<AttachmentsSectionProps> = ({ taskId, token }
     useEffect(() => {
         const loadAttachments = async () => {
             try {
-                const fetchedAttachments = await fetchAttachmentsForTask(taskId, token);
+                const fetchedAttachments = await fetchAttachmentsForTask(taskId);
                 setAttachments(fetchedAttachments);
             } catch (error) {
                 console.error('Failed to fetch attachments:', error);
             }
         };
         loadAttachments();
-    }, [taskId, token]);
+    }, [taskId]);
 
     const uploadMutation = useMutation({
-        mutationFn: ({ file, taskId, token }: { file: File; taskId: string; token: string }) =>
-            uploadAttachmentToTask(taskId, file, token),
+        mutationFn: ({ file, taskId }: { file: File; taskId: string }) =>
+            uploadAttachmentToTask(taskId, file),
         onSuccess: (newAttachment) => {
             setAttachments((prevAttachments) => [...prevAttachments, newAttachment]);
             queryClient.invalidateQueries({ queryKey: ['attachments', taskId] });
@@ -54,14 +53,14 @@ const AttachmentsSection: React.FC<AttachmentsSectionProps> = ({ taskId, token }
         setIsDragging(false);
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             const file = e.dataTransfer.files[0];
-            uploadMutation.mutate({ file, taskId, token });
+            uploadMutation.mutate({ file, taskId });
         }
     };
 
     const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
-            uploadMutation.mutate({ file, taskId, token });
+            uploadMutation.mutate({ file, taskId });
         }
     };
 

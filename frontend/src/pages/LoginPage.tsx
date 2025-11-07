@@ -6,266 +6,231 @@ import {
   Button,
   Checkbox,
   Container,
+  GlobalStyles,
   IconButton,
   InputAdornment,
   Paper,
-  Typography,
   TextField,
+  Typography
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import useAuthStore from '../store/authStore';
 import { login } from '../services/authService';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPwd, setShowPwd] = useState(false);
-  const [remember, setRemember] = useState(true);
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
   const navigate = useNavigate();
   const { login: loginUser } = useAuthStore();
 
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [remember, setRemember] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // validação simples
-    let hasError = false;
-    if (!email.trim()) {
-      setEmailError('Informe seu e-mail');
-      hasError = true;
-    } else {
-      setEmailError(null);
-    }
-    if (!password) {
-      setPasswordError('Informe sua senha');
-      hasError = true;
-    } else {
-      setPasswordError(null);
-    }
-    if (hasError) return;
-
     try {
-      setSubmitting(true);
-      const response = await login({ email, password }); // { data: { token } } ou { token }
-      const token = (response as any).data?.token ?? (response as any).token;
-      loginUser(token);
-      if (remember) localStorage.setItem('token', token);
+      const data = await login({ email, password }); // token vai para cookie
+      loginUser(); // marca isAuthenticated = true
       navigate('/');
+
     } catch (err) {
-      setPasswordError('Credenciais inválidas');
       console.error('Login failed', err);
-    } finally {
-      setSubmitting(false);
     }
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'grid',
-        placeItems: 'center',
-        bgcolor: 'linear-gradient(180deg, #0b1220 0%, #081019 60%, #07150f 100%)',
-        background:
-          'radial-gradient(1200px 600px at 50% -20%, rgba(46,91,255,.22) 0%, rgba(46,91,255,0) 60%), radial-gradient(900px 500px at 50% 110%, rgba(20,220,160,.18) 0%, rgba(20,220,160,0) 60%), linear-gradient(180deg, #0b1220 0%, #081019 60%, #07150f 100%)',
-        p: 2,
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={8}
+    <>
+      {/* 1) BG no body, cobrindo a tela toda */}
+      <GlobalStyles
+        styles={{
+          'html, body, #root': { height: '100%', margin: 0, padding: 0 },
+          body: {
+            backgroundColor: '#0b1220',
+            backgroundImage: `
+              radial-gradient(1200px 600px at 50% -20%, rgba(46,91,255,0.22) 0%, rgba(46,91,255,0) 60%),
+              radial-gradient(900px 500px at 50% 110%, rgba(20,220,160,0.18) 0%, rgba(20,220,160,0) 60%),
+              linear-gradient(180deg, #0b1220 0%, #081019 60%, #07150f 100%)
+            `,
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed',
+            overflowX: 'hidden'
+          }
+        }}
+      />
+
+      {/* 2) Wrapper centralizado – nada de position maluco */}
+      <Box
+          component="main"
           sx={{
-            mx: 'auto',
-            p: { xs: 3, sm: 4 },
-            borderRadius: 3,
-            width: '100%',
-            maxWidth: 520,
-            backdropFilter: 'blur(6px)',
-            background:
-              'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            position: 'fixed',
+            inset: 0,                 // top/right/bottom/left: 0
+            display: 'grid',
+            placeItems: 'center',     // centraliza X e Y
+            p: 2,
+            width: '100vw',
+            height: '100dvh',         // considera barra de endereço mobile
+            overflow: 'hidden',
+            zIndex: 0,
           }}
         >
-          <Typography
-            variant="h3"
-            align="center"
-            sx={{ color: '#E6E9EF', fontWeight: 800, mb: 0.5, letterSpacing: 0.5 }}
+          <Paper
+            elevation={8}
+            sx={{
+              p: { xs: 3, sm: 4 },
+              borderRadius: 3,
+              width: '100%',
+              maxWidth: 520,
+              color: '#e9eef7',
+              backdropFilter: 'blur(6px)',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
           >
-            Login
-          </Typography>
-          <Typography
-            variant="body2"
-            align="center"
-            sx={{ color: 'rgba(230,233,239,.75)', mb: 3 }}
-          >
-            Bem-vindo de volta! Acesse sua conta para continuar.
-          </Typography>
+            <Typography
+              variant="h4"
+              fontWeight={800}
+              sx={{ textAlign: 'center', mb: 0.5, letterSpacing: 0.5 }}
+            >
+              Task Flow
+            </Typography>
+            <Typography
+              variant='h5'
+            >
+              Entrar
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ textAlign: 'center', opacity: 0.8, mb: 3 }}
+            >
+              Bem-vindo de volta! Acesse sua conta para continuar.
+            </Typography>
 
-          <Box component="form" onSubmit={handleSubmit} noValidate>
-            {/* Label fixa + campo – mais visível e acima do input */}
-            <Box sx={{ mb: 2 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  display: 'block',
-                  color: '#C8D3F5',
-                  fontWeight: 700,
-                  letterSpacing: 0.4,
-                  mb: 0.75,
-                }}
-              >
+            <Box component="form" onSubmit={handleSubmit} noValidate>
+              {/* Label visível e acima */}
+              <Typography variant="caption" sx={{ mb: 0.5, display: 'block', opacity: 0.9 }}>
                 Email
               </Typography>
               <TextField
-                placeholder="voce@exemplo.com"
-                type="email"
                 fullWidth
+                placeholder="seu.email@exemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                error={!!emailError}
-                helperText={emailError || ' '}
-                size="medium"
                 variant="outlined"
-                InputProps={{
-                  sx: {
-                    color: '#E6E9EF',
-                    bgcolor: 'rgba(255,255,255,0.04)',
-                    '& input::placeholder': { color: 'rgba(230,233,239,.55)' },
-                    '& fieldset': { borderColor: 'rgba(255,255,255,0.18)' },
-                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.32)' },
-                    '&.Mui-focused fieldset': { borderColor: '#6EA8FF' },
-                  },
+                size="medium"
+                sx={{
+                  mb: 2.5,
+                  input: { color: '#e9eef7' },
+                  '& .MuiOutlinedInput-root fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
+                  '& .MuiOutlinedInput-root:hover fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
                 }}
               />
-            </Box>
 
-            <Box sx={{ mb: 1.5 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  display: 'block',
-                  color: '#C8D3F5',
-                  fontWeight: 700,
-                  letterSpacing: 0.4,
-                  mb: 0.75,
-                }}
-              >
+              <Typography variant="caption" sx={{ mb: 0.5, display: 'block', opacity: 0.9 }}>
                 Password
               </Typography>
               <TextField
-                placeholder="••••••••"
-                type={showPwd ? 'text' : 'password'}
                 fullWidth
+                type={showPw ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                error={!!passwordError}
-                helperText={passwordError || ' '}
-                size="medium"
                 variant="outlined"
+                size="medium"
+                sx={{
+                  mb: 1.5,
+                  input: { color: '#e9eef7' },
+                  '& .MuiOutlinedInput-root fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
+                  '& .MuiOutlinedInput-root:hover fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                }}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
-                        aria-label="mostrar senha"
-                        onClick={() => setShowPwd((s) => !s)}
+                        onClick={() => setShowPw((v) => !v)}
                         edge="end"
-                        sx={{ color: 'rgba(230,233,239,.8)' }}
+                        aria-label={showPw ? 'Hide password' : 'Show password'}
+                        sx={{ color: 'rgba(255,255,255,0.7)' }}
                       >
-                        {showPwd ? <VisibilityOff /> : <Visibility />}
+                        {showPw ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
                   ),
-                  sx: {
-                    color: '#E6E9EF',
-                    bgcolor: 'rgba(255,255,255,0.04)',
-                    '& input::placeholder': { color: 'rgba(230,233,239,.55)' },
-                    '& fieldset': { borderColor: 'rgba(255,255,255,0.18)' },
-                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.32)' },
-                    '&.Mui-focused fieldset': { borderColor: '#6EA8FF' },
-                  },
                 }}
               />
-            </Box>
 
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                mb: 2.5,
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Checkbox
-                  size="small"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  sx={{ color: 'rgba(230,233,239,.7)' }}
-                />
-                <Typography variant="body2" sx={{ color: 'rgba(230,233,239,.9)' }}>
-                  Remember me
-                </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  mb: 2.5,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Checkbox
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    sx={{ color: 'rgba(255,255,255,0.7)' }}
+                  />
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Remember me
+                  </Typography>
+                </Box>
+
+                <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
+                  <Typography variant="body2" sx={{ color: '#73d6ff' }}>
+                    Forgot Password?
+                  </Typography>
+                </Link>
               </Box>
-              <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
-                <Typography
-                  variant="body2"
-                  sx={{ color: '#7FB3FF', '&:hover': { textDecoration: 'underline' } }}
-                >
-                  Forgot Password?
-                </Typography>
-              </Link>
-            </Box>
 
-            <Button
-              type="submit"
-              fullWidth
-              disabled={submitting}
-              sx={{
-                py: 1.25,
-                borderRadius: 2,
-                fontWeight: 800,
-                letterSpacing: 1,
-                color: '#0B1220',
-                background:
-                  'linear-gradient(90deg, #3D7EFF 0%, #22D3A6 100%)',
-                boxShadow: '0 8px 24px rgba(34,211,166,.25)',
-                '&:hover': {
+              <Button
+                type="submit"
+                fullWidth
+                size="large"
+                sx={{
+                  py: 1.2,
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                  borderRadius: 2,
                   background:
-                    'linear-gradient(90deg, #4B89FF 0%, #2BE6B6 100%)',
-                },
-              }}
-            >
-              {submitting ? 'Entrando...' : 'LOGIN'}
-            </Button>
+                    'linear-gradient(90deg, rgba(46,91,255,0.95) 0%, rgba(20,220,160,0.95) 100%)',
+                  color: '#0b1220',
+                  '&:hover': {
+                    filter: 'brightness(1.05)',
+                    transform: 'translateY(-1px)',
+                  },
+                  transition: 'all .15s ease',
+                }}
+              >
+                LOGIN
+              </Button>
 
-            <Box sx={{ mt: 3, textAlign: 'center' }}>
-              <Typography variant="body2" sx={{ color: 'rgba(230,233,239,.75)' }}>
-                Não tem uma conta?
-              </Typography>
+              <Box sx={{ textAlign: 'center', mt: 2.5, mb: 1, opacity: 0.8 }}>
+                <Typography variant="body2">Não tem uma conta?</Typography>
+              </Box>
+
               <Button
                 component={Link}
                 to="/signup"
                 fullWidth
+                size="large"
                 variant="outlined"
                 sx={{
-                  mt: 1,
                   py: 1.1,
                   borderRadius: 2,
-                  borderColor: 'rgba(255,255,255,0.25)',
-                  color: '#E6E9EF',
-                  '&:hover': { borderColor: '#6EA8FF', bgcolor: 'rgba(110,168,255,.08)' },
+                  color: '#e9eef7',
+                  borderColor: 'rgba(255,255,255,0.35)',
+                  '&:hover': { borderColor: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.06)' },
                 }}
               >
                 CRIAR CONTA
               </Button>
             </Box>
-          </Box>
-        </Paper>
-      </Container>
-    </Box>
+          </Paper>
+      </Box>
+    </>
   );
 };
 

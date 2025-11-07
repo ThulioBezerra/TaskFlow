@@ -1,21 +1,27 @@
 package com.taskflow.service;
 
-import com.taskflow.dto.RegisterRequest;
-import com.taskflow.model.UserRole;
-import com.taskflow.model.User;
-import com.taskflow.repository.UserRepository;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import com.taskflow.dto.RegisterRequest;
+import com.taskflow.model.User;
+import com.taskflow.model.UserRole;
+import com.taskflow.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -32,7 +38,7 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        registerRequest = new RegisterRequest("test@example.com", "password");
+        registerRequest = new RegisterRequest("test@example.com", "password", UserRole.COLLABORATOR);
         user = User.builder()
                 .email("test@example.com")
                 .password("encodedPassword")

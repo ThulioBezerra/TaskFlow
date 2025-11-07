@@ -1,15 +1,19 @@
-import type { UserSummary } from '../types';
+import type { AllUsers, UserSummary } from '../types';
+import { api } from './api';
 
-const API_URL = '/api/users';
 
-export async function getUsers(token: string): Promise<UserSummary[]> {
-  const response = await fetch(API_URL, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-  if (!response.ok) {
+export async function getUsers(): Promise<AllUsers[]> {
+  const response = await api.get('/users');
+  if (!response.status) {
     throw new Error('Failed to fetch users');
   }
-  return response.json();
+  return response.data;
+};
+
+export async function getUsersByName(name: string): Promise<UserSummary[]> {
+    const response = await api.get('/users/'+name);
+  if (!response.status) {
+    throw new Error('Failed to fetch users');
+  }
+  return response.data;
 };

@@ -1,20 +1,23 @@
 package com.taskflow.dto;
 
+import java.util.UUID;
+
 import com.taskflow.model.TaskPriority;
+
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.Optional;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateTaskRequest {
+    @NotBlank
     private String title;
     private String description;
-    private TaskPriority priority;
-    private java.util.Optional<java.util.UUID> projectId;
+    private UUID projectId;
+    private TaskPriority priority; // opcional ou @NotNull se quiser obrigar
 }

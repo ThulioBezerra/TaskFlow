@@ -69,7 +69,7 @@ class ProjectControllerTest {
 
         @Test
         void createProject_success() throws Exception {
-                CreateProjectRequest request = new CreateProjectRequest("New Project", "New Desc", manager.getId(),
+                CreateProjectRequest request = new CreateProjectRequest("New Project", "New Desc",
                                 Arrays.asList(UUID.fromString("c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")));
                 Project createdProject = new Project(UUID.fromString("d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"),
                                 "New Project",
@@ -89,7 +89,7 @@ class ProjectControllerTest {
 
         @Test
         void createProject_validationError() throws Exception {
-                CreateProjectRequest request = new CreateProjectRequest("", "New Desc", manager.getId(),
+                CreateProjectRequest request = new CreateProjectRequest("", "New Desc",
                                 Arrays.asList(UUID.fromString("c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"))); // Empty name
 
                 mockMvc.perform(post("/api/projects")
@@ -120,7 +120,7 @@ class ProjectControllerTest {
         @Test
         void updateProject_success() throws Exception {
                 CreateProjectRequest request = new CreateProjectRequest("Updated Project", "Updated Desc",
-                                manager.getId(), null);
+                                null);
                 Project updatedProject = new Project(project.getId(),
                                 "Updated Project",
                                 "Updated Desc",
@@ -139,8 +139,8 @@ class ProjectControllerTest {
 
         @Test
         void updateProject_validationError() throws Exception {
-                CreateProjectRequest request = new CreateProjectRequest("", "Updated Desc", manager.getId(), null); // Empty
-                                                                                                                    // name
+                CreateProjectRequest request = new CreateProjectRequest("", "Updated Desc", null); // Empty
+                                                                                                   // name
 
                 mockMvc.perform(put("/api/projects/{projectId}", project.getId())
                                 .contentType(MediaType.APPLICATION_JSON)

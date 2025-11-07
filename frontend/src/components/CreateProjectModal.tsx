@@ -1,69 +1,138 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as projectService from '../services/projectService';
+import { getUsers, getUsersByName } from '../services/userService';
 import toast from 'react-hot-toast';
 import './CreateProjectModal.css';
+import type { AllUsers } from '../types';
+import { useQuery } from '@tanstack/react-query';
 
 interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateProject: () => void; // No longer passes project data, as it's handled internally
+  onCreateProject: () => void;
 }
 
-const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose, onCreateProject }) => {
+const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
+  isOpen,
+  onClose,
+  onCreateProject,
+}) => {
+  const { data: allUsers = [] } = useQuery<AllUsers[]>({
+    queryKey: ['users'],
+    queryFn: getUsers,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<{ id: string; name: string }[]>([]);
-  const [selectedUsers, setSelectedUsers] = useState<{ id: string; name: string }[]>([]);
 
-  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const term = e.target.value;
-    setSearchTerm(term);
-    if (term.trim()) {
-      try {
-        const users = await projectService.searchUsers(term);
-        setSearchResults(users.filter(user => !selectedUsers.some(selected => selected.id === user.id)));
-      } catch (error) {
-        toast.error('Failed to search users.');
-        console.error('Error searching users:', error);
-      }
-    } else {
-      setSearchResults([]);
+  // Agora são só strings (emails)
+  const [searchResults, setSearchResults] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+
+  // guarda o timeout sem causar re-render
+  const timerRef = useRef<number | null>(null);
+
+  // filtro local por email usando cache
+  const locallyFiltered = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return [];
+    return allUsers
+      .filter((u) => u.email?.toLowerCase().includes(term))
+      .map((u) => u.email);
+  }, [allUsers, searchTerm]);
+
+    useEffect(() => {
+    // limpa timeout anterior
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
-  };
 
-  const handleAddUser = (user: { id: string; name: string }) => {
-    setSelectedUsers((prev) => [...prev, user]);
+    const term = searchTerm.trim();
+    if (!term) {
+      // zera resultados se campo vazio
+      setSearchResults((prev) => (prev.length ? [] : prev));
+      return;
+    }
+
+    timerRef.current = window.setTimeout(async () => {
+      try {
+        // 1) filtro local pelo cache (allUsers)
+        const lower = term.toLowerCase();
+        let candidates = allUsers
+          .filter((u) => u.email?.toLowerCase().includes(lower))
+          .map((u) => u.email);
+
+        // 2) fallback no servidor se nada no cache
+        if (candidates.length === 0) {
+          const serverUsers = await getUsersByName(term);
+          candidates = serverUsers.map((u: { email: string }) => u.email);
+        }
+
+        // 3) remove já selecionados
+        candidates = candidates.filter((email) => !selectedUsers.includes(email));
+
+        // 4) evita setState redundante (prev == candidates)
+        setSearchResults((prev) => {
+          if (prev.length === candidates.length &&
+              prev.every((v, i) => v === candidates[i])) {
+            return prev;
+          }
+          return candidates;
+        });
+      } catch (err) {
+        console.error('Error searching users:', err);
+        toast.error('Failed to search users.');
+      }
+    }, 300);
+
+    // cleanup
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [searchTerm, allUsers, selectedUsers]);
+
+  const handleAddUser = (email: string) => {
+    if (!selectedUsers.includes(email)) {
+      setSelectedUsers((prev) => [...prev, email]);
+    }
     setSearchTerm('');
     setSearchResults([]);
   };
 
-  const handleRemoveUser = (userId: string) => {
-    setSelectedUsers((prev) => prev.filter((user) => user.id !== userId));
+  const handleRemoveUser = (email: string) => {
+    setSelectedUsers((prev) => prev.filter((e) => e !== email));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (projectName.trim()) {
-      try {
-        // Assuming a current user ID for managerId. In a real app, this would come from auth context.
-        const managerId = '1'; // Placeholder for current user ID
-        await projectService.createProject({
-          name: projectName,
-          description: projectDescription,
-          managerId: managerId,
-          memberIds: selectedUsers.map(user => user.id),
-        });
-        toast.success('Project created successfully!');
-        setProjectName('');
-        setProjectDescription('');
-        setSelectedUsers([]);
-        onClose(); // Close modal on success
-        onCreateProject(); // Notify parent component of project creation
-      } catch (error) {
-        toast.error('Failed to create project.');
-        console.error('Error creating project:', error);
-      }
+    if (!projectName.trim()) return;
+
+    try {
+      // IMPORTANTE: envie memberEmails (não memberIds)
+      await projectService.createProject({
+        name: projectName.trim(),
+        description: projectDescription.trim(),
+        memberEmails: selectedUsers, // <<< aqui vai a lista de emails
+      });
+
+      toast.success('Project created successfully!');
+      setProjectName('');
+      setProjectDescription('');
+      setSelectedUsers([]);
+      setSearchTerm('');
+      setSearchResults([]);
+      onClose();
+      onCreateProject();
+    } catch (error) {
+      console.error('Error creating project:', error);
+      toast.error('Failed to create project.');
     }
   };
 
@@ -73,6 +142,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
     <div className="modal-overlay">
       <div className="modal-content">
         <h2>Create New Project</h2>
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="projectName">Project Name:</label>
@@ -84,13 +154,14 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
               required
             />
           </div>
+
           <div className="form-group">
             <label htmlFor="projectDescription">Description (Optional):</label>
             <textarea
               id="projectDescription"
               value={projectDescription}
               onChange={(e) => setProjectDescription(e.target.value)}
-            ></textarea>
+            />
           </div>
 
           <div className="form-group">
@@ -98,24 +169,27 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
             <input
               type="text"
               id="userSearch"
-              placeholder="Search users..."
+              placeholder="Search by email..."
               value={searchTerm}
-              onChange={handleSearch}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              autoComplete="off"
             />
+
             {searchResults.length > 0 && (
               <ul className="search-results">
-                {searchResults.map((user) => (
-                  <li key={user.id} onClick={() => handleAddUser(user)}>
-                    {user.name}
+                {searchResults.map((email) => (
+                  <li key={email} onClick={() => handleAddUser(email)}>
+                    {email}
                   </li>
                 ))}
               </ul>
             )}
+
             <div className="selected-users">
-              {selectedUsers.map((user) => (
-                <span key={user.id} className="selected-user-tag">
-                  {user.name}
-                  <button type="button" onClick={() => handleRemoveUser(user.id)}>x</button>
+              {selectedUsers.map((email) => (
+                <span key={email} className="selected-user-tag">
+                  {email}
+                  <button type="button" onClick={() => handleRemoveUser(email)}>x</button>
                 </span>
               ))}
             </div>

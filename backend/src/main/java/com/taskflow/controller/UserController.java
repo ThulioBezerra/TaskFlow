@@ -1,16 +1,20 @@
 package com.taskflow.controller;
 
-import com.taskflow.dto.BadgeDto;
-import com.taskflow.model.Badge;
-import com.taskflow.model.User;
-import com.taskflow.service.UserService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.taskflow.dto.AllUsersResponseDTO;
+import com.taskflow.dto.BadgeDto;
+import com.taskflow.model.Badge;
+import com.taskflow.model.User;
+import com.taskflow.service.UserService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/users")
@@ -35,4 +39,10 @@ public class UserController {
                 .icon(badge.getIcon())
                 .build();
     }
+
+    @GetMapping("/")
+    public List<AllUsersResponseDTO> getUsersByName() {
+        return userService.getUsers();
+    }
+
 }

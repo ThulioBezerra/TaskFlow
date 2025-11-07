@@ -1,7 +1,7 @@
-import type { Task, TaskStatus } from "../components/TaskCard";
-import type { Comment, Attachment } from "../types";
-
-const API_URL = '/api/tasks';
+// src/services/taskService.ts
+import { api } from './api'; // <- sua instância axios com interceptors
+import type { Task, TaskStatus } from '../components/TaskCard';
+import type { Comment, Attachment } from '../types';
 
 export type UpdateTaskRequest = {
   title?: string;
@@ -9,159 +9,98 @@ export type UpdateTaskRequest = {
   priority?: number | null;
   dueDate?: string | null;
   status?: TaskStatus;
-  assigneeId?: string | null; // id do responsável (null = desassociar)
-  projectId?: string | null;  // id do projeto (null = desassociar)
+  assigneeId?: string | null; // null = desassociar; undefined = não alterar
+  projectId?: string | null;  // null = desassociar; undefined = não alterar
 };
 
-export const getTasks = async (token: string) => {
-    const response = await fetch(API_URL, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-    if (!response.ok) {
-        throw new Error('Failed to fetch tasks');
-    }
-    return response.json();
+const BASE = '/tasks';
+
+/** Lista tarefas */
+export const getTasks = async (): Promise<Task[]> => {
+  const { data } = await api.get<Task[]>(BASE);
+  return data;
 };
 
-export const createTask = async (task: { title: string; description: string; projectId?: string }, token: string) => {
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(task)
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to create task');
-    }
-
-    return response.json();
+/** Cria tarefa */
+export const createTask = async (
+  task: { title: string; description: string; projectId?: string }
+): Promise<Task> => {
+  const { data } = await api.post<Task>(BASE, task);
+  return data;
 };
 
-export const updateTask = (id: string, data: UpdateTaskRequest, token: string) => {
+/** Atualiza tarefa (parcial) */
+export const updateTask = async (
+  id: string,
+  patch: UpdateTaskRequest
+): Promise<Task> => {
+  // remove chaves undefined para não sobrescrever nada por engano
   const body: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(data)) if (v !== undefined) body[k] = v;
-
-  return fetch(`/api/tasks/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify(body),
-  }).then(r => {
-    if (!r.ok) throw new Error('Failed to update task');
-    return r.json();
-  });
-};
-
-export const updateTaskStatus = async (id: string, status: string, token: string) => {
-    const response = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status })
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to update task status');
-    }
-
-    return response.json();
-};
-
-export const fetchCommentsForTask = async (taskId: string, token: string): Promise<Comment[]> => {
-    const response = await fetch(`${API_URL}/${taskId}/comments`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-    if (!response.ok) {
-        throw new Error('Failed to fetch comments');
-    }
-    return response.json();
-};
-
-export const addCommentToTask = async (taskId: string, content: string, token: string): Promise<Comment> => {
-    const response = await fetch(`${API_URL}/${taskId}/comments`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ content })
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to add comment');
-    }
-
-    return response.json();
-};
-
-export const deleteTask = async (id: string, token: string): Promise<void> => {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to delete task');
+  for (const [k, v] of Object.entries(patch)) {
+    if (v !== undefined) body[k] = v;
   }
+  const { data } = await api.put<Task>(`${BASE}/${id}`, body);
+  return data;
 };
 
-export const deleteCommentFromTask = async (taskId: string, commentId: string, token: string): Promise<void> => {
-  const res = await fetch(`${API_URL}/${taskId}/comments/${commentId}`, {
-    method: 'DELETE',
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error('Failed to delete comment');
+/** Atualiza apenas o status */
+export const updateTaskStatus = async (
+  id: string,
+  status: TaskStatus
+): Promise<Task> => {
+  const { data } = await api.put<Task>(`${BASE}/${id}`, { status });
+  return data;
 };
 
-export const deleteAttachmentFromTask = async (taskId: string, attachmentId: string, token: string): Promise<void> => {
-  const res = await fetch(`${API_URL}/${taskId}/attachments/${attachmentId}`, {
-    method: 'DELETE',
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error('Failed to delete attachment');
+/** Comentários */
+export const fetchCommentsForTask = async (taskId: string): Promise<Comment[]> => {
+  const { data } = await api.get<Comment[]>(`${BASE}/${taskId}/comments`);
+  return data;
 };
 
-
-
-export const uploadAttachmentToTask = async (taskId: string, file: File, token: string): Promise<Attachment> => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch(`${API_URL}/${taskId}/attachments`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to upload attachment');
-    }
-
-    return response.json();
+export const addCommentToTask = async (
+  taskId: string,
+  content: string
+): Promise<Comment> => {
+  const { data } = await api.post<Comment>(`${BASE}/${taskId}/comments`, { content });
+  return data;
 };
 
-export const fetchAttachmentsForTask = async (taskId: string, token: string): Promise<Attachment[]> => {
-    const response = await fetch(`${API_URL}/${taskId}/attachments`, {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-    });
+export const deleteCommentFromTask = async (
+  taskId: string,
+  commentId: string
+): Promise<void> => {
+  await api.delete(`${BASE}/${taskId}/comments/${commentId}`);
+};
 
-    if (!response.ok) {
-        throw new Error('Failed to fetch attachments');
-    }
+/** Anexos */
+export const uploadAttachmentToTask = async (
+  taskId: string,
+  file: File
+): Promise<Attachment> => {
+  const formData = new FormData();
+  formData.append('file', file);
 
-    return response.json();
+  // Não setar Content-Type manualmente; o browser define o boundary
+  const { data } = await api.post<Attachment>(`${BASE}/${taskId}/attachments`, formData);
+  return data;
+};
+
+export const fetchAttachmentsForTask = async (
+  taskId: string
+): Promise<Attachment[]> => {
+  const { data } = await api.get<Attachment[]>(`${BASE}/${taskId}/attachments`);
+  return data;
+};
+
+export const deleteAttachmentFromTask = async (
+  taskId: string,
+  attachmentId: string
+): Promise<void> => {
+  await api.delete(`${BASE}/${taskId}/attachments/${attachmentId}`);
+};
+
+/** Exclusão da tarefa */
+export const deleteTask = async (id: string): Promise<void> => {
+  await api.delete(`${BASE}/${id}`);
 };

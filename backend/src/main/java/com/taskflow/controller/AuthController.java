@@ -1,19 +1,25 @@
 package com.taskflow.controller;
 
+import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.taskflow.dto.AuthResponse;
 import com.taskflow.dto.ForgotPasswordRequest;
 import com.taskflow.dto.LoginRequest;
 import com.taskflow.dto.RegisterRequest;
 import com.taskflow.dto.ResetPasswordRequest;
 import com.taskflow.service.AuthService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,8 +29,10 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    // This endpoint is intentionally exposed without CSRF protection due to the global
-    // CSRF disablement in SecurityConfig.java, consistent with a stateless API design.
+    // This endpoint is intentionally exposed without CSRF protection due to the
+    // global
+    // CSRF disablement in SecurityConfig.java, consistent with a stateless API
+    // design.
     public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
         authService.register(request);
         return ResponseEntity.ok("User registered successfully");

@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,20 +39,34 @@ public class ProjectController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createProject(@Valid @RequestBody CreateProjectRequest request, BindingResult result) {
-        // TODO: Implement authentication and authorization checks here
-        // Only authenticated users with appropriate roles should be able to create
-        // projects
+    public ResponseEntity<?> createProject(@Valid @RequestBody CreateProjectRequest request,
+            BindingResult result) {
         if (result.hasErrors()) {
             return new ResponseEntity<>(result.getAllErrors(), HttpStatus.BAD_REQUEST);
         }
+
+        // 1) Pega o usuário autenticado
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated()) {
+            // Aqui você pode retornar 401 ou 403, dependendo da sua regra
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+
+        String email = auth.getName(); // username/email do user logado
+        User manager = userService.findByEmail(email); // implementa isso no UserService/Repo
+
+        // 2) Monta o projeto
         Project project = new Project();
         project.setName(request.getName());
         project.setDescription(request.getDescription());
 
-        // For now, we'll assume the managerId from the request is the creating user.
-        // In a real app, this would come from the authenticated user's context.
-        Project createdProject = projectService.createProject(project, request.getManagerId(), request.getMemberIds());
+        // 3) Usa SEMPRE o ID do usuário logado como manager
+        Project createdProject = projectService.createProject(
+                project,
+                manager.getId(), // managerId = usuário autenticado
+                request.getMemberIds());
+
         return new ResponseEntity<>(convertToDto(createdProject), HttpStatus.CREATED);
     }
 

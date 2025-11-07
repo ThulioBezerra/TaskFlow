@@ -16,6 +16,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ id, title, tasks, onTaskCli
 
     const style = {
         width: '300px',
+        color: 'black',
         minHeight: '500px',
         margin: '0 10px',
         padding: '10px',
