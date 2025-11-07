@@ -1,53 +1,42 @@
+// src/components/TaskDetailsModal.tsx
 import React from "react";
-import { TaskStatus } from "./TaskCard";
-import type { Task } from "./TaskCard";
+import { TaskStatus, type Task } from "./TaskCard";
+import useTaskDetails from "../hooks/useTasks"; // 👈 IMPORTA O HOOK (default)
+import { useUsers } from "../hooks/useUsers";
+import { useProjectsByUser } from "../hooks/useProjectsByUser";
 import CommentsSection from "./CommentsSection";
 import AttachmentsSection from "./AttachmentsSection";
-import { useTaskDetails } from "../hooks/useTasks";
-import { useUsers } from "../hooks/useUsers";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TaskDetailsModalProps {
   task: Task;
   onClose: () => void;
 }
 
-const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
-  task,
-  onClose,
-}) => {
+const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, onClose }) => {
+  const qc = useQueryClient();
+
+  // 👇 AQUI usamos o hook DENTRO do componente
   const {
-    // estado
-    title,
-    setTitle,
-    description,
-    setDescription,
-    priority,
-    setPriority,
-    dueDate,
-    setDueDate,
-    status,
-    setStatus,
-    selectedAssigneeId,
-    setSelectedAssigneeId,
-    selectedProjectId,
-    setSelectedProjectId,
-
-    projects,
+    title, setTitle,
+    description, setDescription,
+    priority, setPriority,
+    dueDate, setDueDate,
+    status, setStatus,
+    selectedAssigneeId, setSelectedAssigneeId,
+    selectedProjectId, setSelectedProjectId,
     comments,
-
-    // carregamento/mutações
-    loadingAny,
-    updateIsPending,
-    deleteIsPending,
-
-    // actions
-    handleSubmit,
-    handleDelete,
+    loadingAny, updateIsPending, deleteIsPending,
+    handleSubmit, handleDelete,
   } = useTaskDetails({ task, onClose });
-  const { users: allUsers } = useUsers();
+
+  // fontes para selects (se quiser)
+  const { users = [] } = useUsers();
+  const { projects = [] } = useProjectsByUser();
+
   return (
-    <div className="modal">
-      <div className="modal-content">
+    <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content" style={{ position: "relative", overflow: "visible", zIndex: 5 }}>
         <h2>Edit Task</h2>
 
         {loadingAny ? (
@@ -57,21 +46,12 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             <form onSubmit={handleSubmit}>
               <div>
                 <label htmlFor="title">Title</label>
-                <input
-                  type="text"
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
+                <input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
               </div>
 
               <div>
                 <label htmlFor="description">Description</label>
-                <textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
+                <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
 
               <div>
@@ -79,15 +59,11 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 <select
                   id="project"
                   value={selectedProjectId || ""}
-                  onChange={(e) =>
-                    setSelectedProjectId(e.target.value || undefined)
-                  }
+                  onChange={(e) => setSelectedProjectId(e.target.value || undefined)}
                 >
                   <option value="">-- No Project --</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
               </div>
@@ -100,9 +76,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                   onChange={(e) => setStatus(e.target.value as TaskStatus)}
                 >
                   {Object.values(TaskStatus).map((s) => (
-                    <option key={s} value={s}>
-                      {s.replace(/_/g, " ")}
-                    </option>
+                    <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
                   ))}
                 </select>
               </div>
@@ -110,19 +84,19 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               <div>
                 <label htmlFor="priority">Priority</label>
                 <input
-                  type="number"
                   id="priority"
+                  type="number"
                   value={priority}
-                  onChange={(e) => setPriority(parseInt(e.target.value))}
+                  onChange={(e) => setPriority(Number(e.target.value))}
                 />
               </div>
 
               <div>
                 <label htmlFor="dueDate">Due Date</label>
                 <input
-                  type="date"
                   id="dueDate"
-                  value={dueDate}
+                  type="date"
+                  value={dueDate ?? ""}
                   onChange={(e) => setDueDate(e.target.value)}
                 />
               </div>
@@ -131,16 +105,12 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 <label htmlFor="assignee">Assignee</label>
                 <select
                   id="assignee"
-                  value={selectedAssigneeId ?? ""} // usamos email como value
-                  onChange={(e) =>
-                    setSelectedAssigneeId(e.target.value || undefined)
-                  }
+                  value={selectedAssigneeId ?? ""}  // email
+                  onChange={(e) => setSelectedAssigneeId(e.target.value || undefined)}
                 >
                   <option value="">-- No Assignee --</option>
-                  {allUsers.map((user) => (
-                    <option key={user.email} value={user.email}>
-                      {user.email}
-                    </option>
+                  {users.map((u) => (
+                    <option key={u.email} value={u.email}>{u.email}</option>
                   ))}
                 </select>
               </div>
@@ -148,9 +118,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               <button type="submit" disabled={updateIsPending}>
                 {updateIsPending ? "Saving..." : "Save"}
               </button>
-              <button type="button" onClick={onClose}>
-                Cancel
-              </button>
+              <button type="button" onClick={onClose}>Cancel</button>
               <button
                 type="button"
                 onClick={handleDelete}
@@ -164,12 +132,10 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             <CommentsSection
               taskId={task.id}
               comments={comments}
-              onCommentAdded={(newComment) =>
-                // como os comentários vêm do react-query no hook, podemos atualizar
-                // via setQueryData lá; aqui é só passar o callback se você quiser manter
-                // igual antes – mas está funcional assim
-                undefined
-              }
+              onCommentAdded={(newComment) => {
+                // atualiza cache dos comentários se quiser
+                qc.setQueryData<any[]>(["task-comments", task.id], (prev = []) => [...prev, newComment]);
+              }}
             />
 
             <AttachmentsSection taskId={task.id} />

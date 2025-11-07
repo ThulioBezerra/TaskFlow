@@ -17,13 +17,14 @@ export interface Attachment {
 export interface Comment {
     id: string;
     content: string;
-    author: { id: string; username: string; };
+    author: { id: string; email: string; };
     timestamp: string;
 }
 
 export interface ProjectSummary {
     id: string;
     name: string;
+    members: ProjectUser[];
 }
 
 export interface UserSummary {

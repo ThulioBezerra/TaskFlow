@@ -1,0 +1,154 @@
+/* container do card */
+.tf-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, #fff 100%);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  padding: 12px 12px 10px;
+  margin: 8px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+  cursor: default;
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+
+.tf-card:hover {
+  box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+}
+
+/* header/topo */
+.tf-card__top {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+/* drag handle (pega com o mouse pra arrastar) */
+.tf-card__drag {
+  width: 20px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  cursor: grab;
+  user-select: none;
+}
+
+.tf-card__drag:active { cursor: grabbing; }
+
+.tf-card__drag-dots {
+  width: 10px;
+  height: 14px;
+  display: inline-block;
+  background-image:
+    radial-gradient(currentColor 1px, transparent 1px),
+    radial-gradient(currentColor 1px, transparent 1px),
+    radial-gradient(currentColor 1px, transparent 1px),
+    radial-gradient(currentColor 1px, transparent 1px),
+    radial-gradient(currentColor 1px, transparent 1px),
+    radial-gradient(currentColor 1px, transparent 1px);
+  background-size: 4px 4px;
+  background-position:
+    0 0, 6px 0,
+    0 6px, 6px 6px,
+    0 12px, 6px 12px;
+  color: rgba(0,0,0,0.35);
+}
+
+/* título + chip */
+.tf-card__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tf-card__title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  margin: 0;
+  color: #0b1220;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* botão editar com o mesmo look do app (usa .primary-button) */
+.tf-card__edit {
+  padding: 6px 12px;
+  font-size: .825rem;
+  border-radius: 8px;
+}
+
+/* chip de status */
+.tf-chip {
+  font-size: 0.70rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.tf-chip--to_do       { background: #eef2ff; color: #334155; border-color: #dbeafe; }
+.tf-chip--in_progress { background: #fff7ed; color: #7c2d12; border-color: #ffedd5; }
+.tf-chip--done        { background: #ecfdf5; color: #065f46; border-color: #d1fae5; }
+
+/* descrição */
+.tf-card__desc {
+  margin: 8px 2px 4px;
+  color: #334155;
+  font-size: 0.92rem;
+  max-height: 3.2em;          /* ~2 linhas */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* metadados */
+.tf-card__meta {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr auto auto;
+  gap: 6px 10px;
+  align-items: center;
+}
+
+.tf-meta__item {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tf-meta__label {
+  font-size: 0.70rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.tf-meta__value {
+  font-size: 0.86rem;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tf-assignee {
+  max-width: 180px;
+}
+
+/* herda o estilo global do teu app */
+.primary-button {
+  background: linear-gradient(90deg, rgba(46,91,255,0.95) 0%, rgba(20,220,160,0.95) 100%);
+  color: #0b1220;
+  border: none;
+  font-weight: 800;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: transform .12s ease, filter .12s ease;
+}
+.primary-button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}

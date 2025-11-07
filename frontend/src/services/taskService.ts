@@ -9,7 +9,7 @@ export type UpdateTaskRequest = {
   priority?: number | null;
   dueDate?: string | null;
   status?: TaskStatus;
-  assigneeId?: string | null; // null = desassociar; undefined = não alterar
+  assigneeEmail?: string | null; // null = desassociar; undefined = não alterar
   projectId?: string | null; // null = desassociar; undefined = não alterar
 };
 
@@ -30,6 +30,7 @@ export const createTask = async (task: {
   dueDate?: string | null;
   priority?: string;
 }): Promise<Task> => {
+  console.log("criando task com "+ JSON.stringify(task))
   const { data } = await api.post<Task>(BASE, task);
   return data;
 };

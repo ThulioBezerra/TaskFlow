@@ -74,8 +74,6 @@ const DashboardPage: React.FC = () => {
 
       {/* Kanban recebe os "gatilhos" de reload */}
       <KanbanBoard
-        projectsVersion={projectsVersion}
-        tasksVersion={tasksVersion}
       />
 
       {/* Modal de Projeto */}

@@ -1,101 +1,159 @@
-import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { uploadAttachmentToTask, fetchAttachmentsForTask } from '../services/taskService';
+// src/components/AttachmentsSection.tsx
+import React, { useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  uploadAttachmentToTask,
+  fetchAttachmentsForTask,
+} from '../services/taskService';
 import type { Attachment } from '../types';
 
 interface AttachmentsSectionProps {
-    taskId: string;
+  taskId: string;
 }
 
 const AttachmentsSection: React.FC<AttachmentsSectionProps> = ({ taskId }) => {
-    const queryClient = useQueryClient();
-    const [attachments, setAttachments] = useState<Attachment[]>([]);
-    const [isDragging, setIsDragging] = useState(false);
+  const qc = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-    // TODO: Fetch attachments on component mount
-    useEffect(() => {
-        const loadAttachments = async () => {
-            try {
-                const fetchedAttachments = await fetchAttachmentsForTask(taskId);
-                setAttachments(fetchedAttachments);
-            } catch (error) {
-                console.error('Failed to fetch attachments:', error);
-            }
-        };
-        loadAttachments();
-    }, [taskId]);
+  // 1) Agora temos um useQuery com a MESMA queryKey que você invalida
+  const {
+    data: attachments = [],
+    isFetching,
+    refetch,
+  } = useQuery<Attachment[]>({
+    queryKey: ['attachments', taskId],
+    queryFn: () => fetchAttachmentsForTask(taskId),
+    enabled: !!taskId,
+    staleTime: 60_000,
+  });
 
-    const uploadMutation = useMutation({
-        mutationFn: ({ file, taskId }: { file: File; taskId: string }) =>
-            uploadAttachmentToTask(taskId, file),
-        onSuccess: (newAttachment) => {
-            setAttachments((prevAttachments) => [...prevAttachments, newAttachment]);
-            queryClient.invalidateQueries({ queryKey: ['attachments', taskId] });
-        },
-        onError: (error) => {
-            console.error('Failed to upload attachment:', error);
-            alert('Failed to upload attachment.');
-        },
-    });
+  // 2) Upload (suporta múltiplos)
+  const uploadMutation = useMutation({
+    mutationFn: async (payload: { files: File[]; taskId: string }) => {
+      const created: Attachment[] = [];
+      for (const f of payload.files) {
+        const a = await uploadAttachmentToTask(payload.taskId, f);
+        created.push(a);
+      }
+      return created;
+    },
+    onSuccess: (newOnes) => {
+      // atualiza cache sem esperar refetch
+      qc.setQueryData<Attachment[]>(['attachments', taskId], (prev = []) => [
+        ...prev,
+        ...newOnes,
+      ]);
+    },
+    onError: (err) => {
+      console.error('Failed to upload attachment:', err);
+      alert('Failed to upload attachment.');
+    },
+  });
 
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
+  // helpers
+  const startUpload = (filesList: FileList | null) => {
+    if (!filesList || filesList.length === 0) return;
+    const files = Array.from(filesList);
+    uploadMutation.mutate({ files, taskId });
+  };
 
-    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(false);
-    };
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
 
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(false);
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            const file = e.dataTransfer.files[0];
-            uploadMutation.mutate({ file, taskId });
-        }
-    };
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
 
-    const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            const file = e.target.files[0];
-            uploadMutation.mutate({ file, taskId });
-        }
-    };
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    startUpload(e.dataTransfer.files);
+  };
 
-    return (
-        <div className="attachments-section">
-            <h3>Attachments</h3>
-            <div
-                className="drop-zone"
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                style={{ border: isDragging ? '2px dashed #007bff' : '2px dashed #ccc' }}
-            >
-                {uploadMutation.isPending ? (
-                    <p>Uploading...</p>
-                ) : (
-                    <p>Drag & drop files here, or click to upload</p>
-                )}
-                <input type="file" onChange={handleFileInputChange} style={{ opacity: 0, position: 'absolute', width: '100%', height: '100%', cursor: 'pointer' }} data-testid="file-input" />
-            </div>
-            <ul className="attachment-list">
-                {attachments.length === 0 ? (
-                    <p>No attachments yet.</p>
-                ) : (
-                    attachments.map((attachment) => (
-                        <li key={attachment.id}>
-                            <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-                                {attachment.fileName}
-                            </a>
-                        </li>
-                    ))
-                )}
-            </ul>
-        </div>
-    );
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    startUpload(e.target.files);
+    // opcional: limpar para permitir re-upload do mesmo arquivo
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const openPicker = () => fileInputRef.current?.click();
+
+  return (
+    <div className="attachments-section">
+      <h3>Attachments</h3>
+
+      <div
+        className="drop-zone"
+        onClick={openPicker}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        style={{
+          position: 'relative',            // <— necessário para o input absolute
+          border: `2px dashed ${isDragging ? '#0ea5e9' : '#ccc'}`,
+          borderRadius: 8,
+          padding: 16,
+          textAlign: 'center',
+          cursor: 'pointer',
+          minHeight: 72,
+        }}
+      >
+        {uploadMutation.isPending ? (
+          <p>Uploading...</p>
+        ) : (
+          <p>Drag & drop files here, or click to upload</p>
+        )}
+
+        {/* input escondido mas clicável via onClick no container */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileInputChange}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0,
+            cursor: 'pointer',
+          }}
+          aria-label="Upload attachments"
+        />
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        {isFetching ? (
+          <p>Loading attachments...</p>
+        ) : attachments.length === 0 ? (
+          <p>No attachments yet.</p>
+        ) : (
+          <ul className="attachment-list" style={{ listStyle: 'none', padding: 0 }}>
+            {attachments.map((a) => (
+              <li key={a.id} style={{ marginBottom: 6 }}>
+                <a
+                  href={a.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={a.fileName}
+                >
+                  {a.fileName}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* botão manual para refazer o fetch, se quiser */}
+      {/* <button onClick={() => refetch()} disabled={isFetching}>Refresh</button> */}
+    </div>
+  );
 };
 
 export default AttachmentsSection;
