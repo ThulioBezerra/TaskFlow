@@ -20,4 +20,5 @@ public class CreateTaskRequest {
     private String description;
     private UUID projectId;
     private TaskPriority priority; // opcional ou @NotNull se quiser obrigar
+    private String assigneeEmail;
 }

@@ -50,8 +50,8 @@ public class TaskService {
         task.setDescription(request.getDescription());
         task.setStatus(TaskStatus.TO_DO);
         task.setAuthor(author);
+        task.setAssignee(userRepository.findByEmail(request.getAssigneeEmail()).orElse(author));
 
-        // se não veio prioridade, define uma default:
         task.setPriority(
                 request.getPriority() != null
                         ? request.getPriority()
@@ -92,10 +92,10 @@ public class TaskService {
         if (request.getDueDate() != null)
             task.setDueDate(request.getDueDate());
 
-        if (request.getAssigneeId() != null) {
-            User assignee = userRepository.findById(request.getAssigneeId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
-            task.setAssignee(assignee);
+        if (request.getAssigneeEmail() != null) {
+            task.setAssignee(userRepository.findByEmail(request.getAssigneeEmail())
+                    .orElseThrow(() -> new ResourceNotFoundException("Assignee not found")));
+
         }
 
         if (request.getStatus() != null) {
